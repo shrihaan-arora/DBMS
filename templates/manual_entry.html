@@ -591,7 +591,7 @@
         <li><strong>Validation:</strong> Overlapping flight times blocked</li>
       </ul>
       {% else %}
-      <p class="small text-muted mb-0">Direct SQL and bulk JSON execution operates with <code>PRAGMA foreign_keys = ON;</code>.</p>
+      <p class="small text-muted mb-0">Direct SQL and bulk JSON execution operates with strict foreign key constraints under MySQL InnoDB.</p>
       {% endif %}
     </div>
 

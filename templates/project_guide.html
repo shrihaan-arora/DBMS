@@ -137,7 +137,7 @@
           <div class="p-3 rounded" style="background:#0f172a; border: 1px solid #334155;">
             <h6 class="fw-bold text-success"><i class="fas fa-check-double me-1"></i> Core Architectural Highlights</h6>
             <ul class="text-muted small mb-0 ps-3">
-              <li>Strict relational integrity with <code>PRAGMA foreign_keys = ON;</code>.</li>
+              <li>Strict relational integrity with MySQL InnoDB foreign keys.</li>
               <li>Full 3NF / BCNF normalization preventing insert, update, and delete anomalies.</li>
               <li>Dynamic non-stored <code>Available_Seats</code> view preventing redundant state divergence.</li>
               <li>Database triggers enforcing zero seat double-booking and automated audit logging.</li>
@@ -312,7 +312,7 @@
           <div class="p-3 rounded h-100" style="background:#0f172a; border: 1px solid #334155;">
             <h6 class="text-white fw-bold"><i class="fas fa-lock text-warning me-2"></i>Concurrency &amp; Conflict Prevention</h6>
             <p class="text-muted small mb-0">
-              Simultaneous booking attempts for the same seat are strictly serialised and blocked by the SQLite <code>prevent_seat_double_booking</code> trigger, raising an immediate transactional abort (<code>RAISE(ABORT, 'Seat already booked...')</code>).
+              Simultaneous booking attempts for the same seat are strictly serialised and blocked by the MySQL <code>prevent_seat_double_booking</code> trigger, raising an immediate transactional abort (<code>SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Seat already booked...'</code>).
             </p>
           </div>
         </div>
@@ -320,7 +320,7 @@
           <div class="p-3 rounded h-100" style="background:#0f172a; border: 1px solid #334155;">
             <h6 class="text-white fw-bold"><i class="fas fa-link text-primary me-2"></i>Referential Integrity &amp; Cascades</h6>
             <p class="text-muted small mb-0">
-              Foreign keys are strictly enforced on every transaction via <code>PRAGMA foreign_keys = ON;</code>. Deleting a booking automatically cascades and purges its weak-entity baggage records (<code>ON DELETE CASCADE</code>).
+              Foreign keys are strictly enforced on every transaction via MySQL InnoDB engine. Deleting a booking automatically cascades and purges its weak-entity baggage records (<code>ON DELETE CASCADE</code>).
             </p>
           </div>
         </div>
@@ -671,7 +671,7 @@ END;
             <h6 class="fw-bold text-white small"><i class="fas fa-layer-group text-primary me-2"></i>Software Architecture</h6>
             <ul class="text-muted small mb-0 ps-3">
               <li><strong>Backend:</strong> Python 3.10+ / 3.14 with Flask microframework.</li>
-              <li><strong>Database Engine:</strong> SQLite 3 with strict foreign key constraints (<code>PRAGMA foreign_keys = ON;</code>).</li>
+              <li><strong>Database Engine:</strong> MySQL 8.0+ (InnoDB) with strict foreign key constraints &amp; triggers.</li>
               <li><strong>Frontend:</strong> Responsive Bootstrap 5.3, FontAwesome 6, custom dark aviation theme.</li>
               <li><strong>Geospatial:</strong> Leaflet.js with CartoDB Dark Matter tiles &amp; bezier geodesic curves.</li>
               <li><strong>Analytics:</strong> Chart.js 4 for operational booking and revenue metrics.</li>

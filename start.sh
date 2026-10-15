@@ -12,8 +12,10 @@ echo "         SkyReserve - Airline Reservation & Flight Operations"
 echo "===================================================================="
 echo ""
 
-# Check for Python
-if command -v python3 &>/dev/null; then
+# Check for Python (prefer local virtual environment if present)
+if [ -f "./venv/bin/python" ]; then
+    PY_CMD="./venv/bin/python"
+elif command -v python3 &>/dev/null; then
     PY_CMD="python3"
 elif command -v python &>/dev/null; then
     PY_CMD="python"
@@ -24,13 +26,13 @@ fi
 
 echo "[+] Using: $($PY_CMD --version)"
 
-# Check and install requirements if Flask is missing
-if ! "$PY_CMD" -c "import flask" &>/dev/null; then
+# Check and install requirements if Flask or mysql.connector is missing
+if ! "$PY_CMD" -c "import flask; import mysql.connector" &>/dev/null; then
     echo "[+] Installing dependencies from requirements.txt..."
     "$PY_CMD" -m pip install -r requirements.txt
 fi
 
-URL="http://localhost:5000"
+URL="http://127.0.0.1:5001"
 echo "[+] Launching web browser at $URL ..."
 
 # Open browser based on OS environment

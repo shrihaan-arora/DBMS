@@ -7,8 +7,8 @@ echo ====================================================================
 echo          SkyReserve - Airline Reservation ^& Flight Operations
 echo ====================================================================
 echo.
-echo  [+] Launching default web browser at http://localhost:5000 ...
-start "" http://localhost:5000
+echo  [+] Launching default web browser at http://localhost:5001 ...
+start "" http://localhost:5001
 echo  [+] Starting Flask server...
 echo.
 echo  Server is running. Press CTRL+C or close this window to exit.

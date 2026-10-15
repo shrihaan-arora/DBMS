@@ -19,9 +19,15 @@ _db_initialized = False
 def ensure_db():
     global _db_initialized
     if not _db_initialized:
-        db_path = os.path.join(os.path.dirname(__file__), "airline.db")
-        if not os.path.exists(db_path):
-            init_db()
+        try:
+            db = get_db()
+            db.execute("SELECT 1 FROM Flight LIMIT 1")
+            db.close()
+        except Exception:
+            try:
+                init_db()
+            except Exception as init_err:
+                app.logger.warning(f"Database check/init warning: {init_err}")
         _db_initialized = True
 
 # ═══════════════════════════  DASHBOARD  ═══════════════════════════════════
@@ -1383,6 +1389,14 @@ def manual_entry_sql():
         flash("Please enter a SQL query", "warning")
         return redirect(url_for("manual_entry", tab="sql"))
     
+    # Security restrictions: Prevent administrative/destructive server operations
+    prohibited_ops = ["DROP DATABASE", "CREATE USER", "ALTER USER", "DROP USER", "GRANT", "REVOKE", "SHUTDOWN"]
+    sql_upper = sql.upper()
+    for op in prohibited_ops:
+        if op in sql_upper:
+            flash(f"Security Alert: Operation '{op}' is restricted in the web console.", "danger")
+            return redirect(url_for("manual_entry", tab="sql"))
+
     db = get_db()
     try:
         cur = db.cursor()
@@ -1392,11 +1406,15 @@ def manual_entry_sql():
         is_select = False
         
         for stmt in statements:
-            if stmt.upper().startswith("SELECT") or stmt.upper().startswith("PRAGMA") or stmt.upper().startswith("EXPLAIN"):
+            stmt_upper = stmt.upper()
+            if (stmt_upper.startswith("SELECT") or stmt_upper.startswith("SHOW") or 
+                stmt_upper.startswith("DESCRIBE") or stmt_upper.startswith("EXPLAIN") or 
+                stmt_upper.startswith("PRAGMA")):
                 res = cur.execute(stmt)
                 if cur.description:
                     headers = [d[0] for d in cur.description]
-                    result_rows = [list(r) for r in res.fetchall()]
+                    raw_rows = res.fetchall()
+                    result_rows = [list(r.values()) if isinstance(r, dict) else list(r) for r in raw_rows]
                 is_select = True
             else:
                 cur.execute(stmt)
@@ -1409,6 +1427,7 @@ def manual_entry_sql():
         else:
             flash("SQL statement(s) executed and committed successfully!", "success")
     except Exception as e:
+        db.rollback()
         flash(f"SQL Execution Error: {e}", "danger")
     finally:
         db.close()
@@ -1434,7 +1453,7 @@ def manual_entry_bulk_json():
         inserted_count = 0
         for item in data:
             cols = list(item.keys())
-            placeholders = ", ".join(["?"] * len(cols))
+            placeholders = ", ".join(["%s"] * len(cols))
             col_names = ", ".join(cols)
             vals = [item[c] for c in cols]
             db.execute(f"INSERT INTO {matched_table} ({col_names}) VALUES ({placeholders})", vals)
@@ -1448,5 +1467,6 @@ def manual_entry_bulk_json():
 
 # ═══════════════════════════  RUN  ═════════════════════════════════════════
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get("PORT", 5001))
+    app.run(debug=True, host="127.0.0.1", port=port)
 
