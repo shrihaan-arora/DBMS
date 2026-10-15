@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -300,34 +300,49 @@
     }
 
     .table {
+      --bs-table-bg: #1e293b !important;
+      --bs-table-color: #f1f5f9 !important;
+      --bs-table-striped-bg: #182234 !important;
+      --bs-table-striped-color: #f1f5f9 !important;
+      --bs-table-hover-bg: #273549 !important;
+      --bs-table-hover-color: #ffffff !important;
+      --bs-table-border-color: #334155 !important;
       margin: 0;
-      color: #e2e8f0;
-      border-color: #334155;
+      color: #f1f5f9 !important;
+      background-color: #1e293b !important;
+      border-color: #334155 !important;
     }
-    .table thead th {
-      background: #0f172a;
-      border-bottom: 2px solid #334155;
+    .table > :not(caption) > * > * {
+      background-color: #1e293b !important;
+      color: #f1f5f9 !important;
+      border-bottom: 1px solid #334155 !important;
+    }
+    .table thead th,
+    .table > thead > tr > th {
+      background-color: #0f172a !important;
+      color: #94a3b8 !important;
+      border-bottom: 2px solid #334155 !important;
       font-size: 0.8rem;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      color: #94a3b8;
       font-weight: 600;
       white-space: nowrap;
       padding: 0.75rem 1rem;
     }
     .table tbody tr {
       transition: background 0.12s;
-      border-bottom: 1px solid #334155;
+      border-bottom: 1px solid #334155 !important;
     }
-    .table tbody tr:hover {
-      background: rgba(51, 65, 85, 0.4);
+    .table tbody tr:hover > * {
+      background-color: rgba(51, 65, 85, 0.75) !important;
+      color: #ffffff !important;
     }
     .table td {
       vertical-align: middle;
       font-size: 0.88rem;
       padding: 0.85rem 1rem;
-      border-color: #334155;
-      color: #f1f5f9;
+      border-color: #334155 !important;
+      color: #f1f5f9 !important;
     }
 
     /* Badges */
