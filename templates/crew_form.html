@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit Crew Member' if crew_member else 'Add Crew Member' }} — SkyReserve{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('crew_list') }}" class="text-decoration-none">Crew</a></li>
+<li class="breadcrumb-item active">{{ 'Edit' if crew_member else 'Add' }}</li>
+{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="table-card">
+      <div class="card-header">
+        <i class="fas fa-{{ 'user-edit' if crew_member else 'user-plus' }} me-2 text-primary"></i>
+        {{ 'Edit Crew Member Profile' if crew_member else 'Register New Crew Member' }}
+      </div>
+      <div class="p-4">
+        <form method="POST" action="{{ url_for('crew_edit', cid=crew_member.Crew_ID) if crew_member else url_for('crew_add') }}">
+          {% if not crew_member %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Crew ID (Optional Manual Primary Key)</label>
+            <input type="number" name="crew_id" class="form-control" placeholder="Leave empty for AUTOINCREMENT">
+          </div>
+          {% endif %}
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">First Name</label>
+              <input type="text" name="first_name" class="form-control" value="{{ crew_member.First_Name if crew_member else '' }}" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Last Name</label>
+              <input type="text" name="last_name" class="form-control" value="{{ crew_member.Last_Name if crew_member else '' }}" required>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Role / Position</label>
+              <select name="role" class="form-select" required>
+                {% for r in ['Captain', 'First Officer', 'Flight Engineer', 'Cabin Crew Lead', 'Cabin Crew'] %}
+                <option value="{{ r }}" {% if crew_member and crew_member.Role == r %}selected{% endif %}>{{ r }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">License Number</label>
+              <input type="text" name="license_no" class="form-control" value="{{ crew_member.License_No if crew_member and crew_member.License_No else '' }}" placeholder="e.g. CPL-1005">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Phone Number</label>
+              <input type="text" name="phone" class="form-control" value="{{ crew_member.Phone if crew_member and crew_member.Phone else '' }}" placeholder="+91 9876543210">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Email Address</label>
+              <input type="email" name="email" class="form-control" value="{{ crew_member.Email if crew_member and crew_member.Email else '' }}" placeholder="staff@airline.com">
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Roster Status</label>
+            <select name="status" class="form-select">
+              {% for s in ['Active', 'On Leave', 'Retired'] %}
+              <option value="{{ s }}" {% if crew_member and crew_member.Status == s %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> {{ 'Save Changes' if crew_member else 'Register Crew' }}</button>
+            <a href="{{ url_for('crew_list') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

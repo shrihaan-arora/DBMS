@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Add Baggage — SkyReserve{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('baggage_list') }}" class="text-decoration-none">Baggage</a></li>
+<li class="breadcrumb-item active">Add Baggage</li>
+{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="table-card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-suitcase-rolling me-2 text-primary"></i>Register Baggage Record (Manual Input)</span>
+        <span class="badge bg-secondary-subtle text-secondary border">Weak Entity</span>
+      </div>
+      <div class="p-4">
+        <form method="POST" action="{{ url_for('baggage_add_standalone') }}">
+          <!-- Booking Link (Dual mode: Manual ID or Dropdown) -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Associated Booking ID <span class="text-danger">*</span></label>
+            <div class="input-group mb-2">
+              <span class="input-group-text"><i class="fas fa-hashtag"></i></span>
+              <input type="number" name="booking_id_manual" id="bookingIdManual" class="form-control" placeholder="Enter Booking ID manually (e.g. 1)" required>
+            </div>
+            <div class="form-text mb-2">Or select from active bookings list:</div>
+            <select name="booking_id" class="form-select" onchange="if(this.value) document.getElementById('bookingIdManual').value=this.value;">
+              <option value="">— Select from Active Bookings —</option>
+              {% for b in bookings %}
+              <option value="{{ b.Booking_ID }}">Booking #{{ b.Booking_ID }}: {{ b.Passenger }} (Flight {{ b.Flight_No }}, {{ b.Class }})</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Baggage Tag Number <span class="text-danger">*</span></label>
+              <input type="text" name="tag_no" class="form-control" placeholder="e.g. BG-IND-901" required>
+              <div class="form-text">Unique barcode / identifier.</div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Weight (kg) <span class="text-danger">*</span></label>
+              <input type="number" step="0.1" name="weight" class="form-control" placeholder="e.g. 18.5" min="0.1" required>
+              <div class="form-text">&gt; 23 kg is flagged as excess.</div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Baggage Type</label>
+              <select name="type" class="form-select">
+                <option value="Checked">Checked Baggage</option>
+                <option value="Cabin">Cabin / Carry-On</option>
+                <option value="Special">Special / Oversized / Fragile</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Sequence Number (Optional)</label>
+              <input type="number" name="baggage_seq_no" class="form-control" placeholder="Auto-calculated if blank">
+              <div class="form-text">Part of composite key (Booking_ID, Seq_No).</div>
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 mt-3">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Save Baggage</button>
+            <a href="{{ url_for('baggage_list') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

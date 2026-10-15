@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit Aircraft' if aircraft else 'Add Aircraft' }} — SkyReserve{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('aircraft_list') }}" class="text-decoration-none">Aircraft</a></li>
+<li class="breadcrumb-item active">{{ 'Edit' if aircraft else 'Add' }}</li>
+{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="table-card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-{{ 'edit' if aircraft else 'plus' }} me-2"></i>{{ 'Edit Aircraft' if aircraft else 'Add New Aircraft' }}</span>
+        {% if not aircraft %}<span class="badge bg-warning-subtle text-warning-emphasis border">Supports Manual Input</span>{% endif %}
+      </div>
+      <div class="p-4">
+        <form method="POST" action="{{ url_for('aircraft_edit', aid=aircraft.Aircraft_ID) if aircraft else url_for('aircraft_add') }}">
+          {% if not aircraft %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Aircraft ID (Optional Manual Primary Key)</label>
+            <input type="number" name="aircraft_id" class="form-control" placeholder="Leave empty for AUTOINCREMENT">
+          </div>
+          {% endif %}
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Registration No</label>
+              <input type="text" name="registration_no" class="form-control" value="{{ aircraft.Registration_No if aircraft else '' }}" placeholder="e.g. VT-ANL" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Model</label>
+              <input type="text" name="model" class="form-control" value="{{ aircraft.Model if aircraft else '' }}" placeholder="e.g. Boeing 737" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Total Capacity</label>
+            <input type="number" name="total_capacity" class="form-control" value="{{ aircraft.Total_Capacity if aircraft else '' }}" min="1" required>
+          </div>
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Economy Seats</label>
+              <input type="number" name="economy_seats" class="form-control" value="{{ aircraft.Economy_Seats if aircraft else 0 }}" min="0">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Business Seats</label>
+              <input type="number" name="business_seats" class="form-control" value="{{ aircraft.Business_Seats if aircraft else 0 }}" min="0">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">First Class Seats</label>
+              <input type="number" name="first_class_seats" class="form-control" value="{{ aircraft.First_Class_Seats if aircraft else 0 }}" min="0">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Status</label>
+            <select name="status" class="form-select">
+              {% for s in ['Active','Maintenance','Retired'] %}
+              <option value="{{ s }}" {% if aircraft and aircraft.Status == s %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>{{ 'Update' if aircraft else 'Add Aircraft' }}</button>
+            <a href="{{ url_for('aircraft_list') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Schedules — SkyReserve{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">Schedules</li>{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <h4 class="fw-bold mb-0"><i class="fas fa-calendar-alt me-2 text-primary"></i>Flight Schedules</h4>
+  <div class="d-flex gap-2">
+    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#quickScheduleModal">
+      <i class="fas fa-keyboard me-1"></i> Quick Manual Input
+    </button>
+    <a href="{{ url_for('schedule_add') }}" class="btn btn-primary"><i class="fas fa-plus me-1"></i> Add Schedule</a>
+  </div>
+</div>
+
+<div class="table-card mb-4">
+  <div class="card-header">
+    <form method="GET" class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label mb-1 small">Date</label>
+        <input type="date" name="date" class="form-control form-control-sm" value="{{ date }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label mb-1 small">Flight No</label>
+        <input type="text" name="flight_no" class="form-control form-control-sm" value="{{ flight_no }}" placeholder="e.g. AI-101">
+      </div>
+      <div class="col-md-4">
+        <button class="btn btn-primary btn-sm me-1"><i class="fas fa-search me-1"></i>Filter</button>
+        <a href="{{ url_for('schedules') }}" class="btn btn-outline-secondary btn-sm">Clear</a>
+      </div>
+    </form>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead><tr><th>ID</th><th>Flight</th><th>Route</th><th>Date</th><th>Departure</th><th>Arrival</th><th>Aircraft</th><th>Gate</th><th>Seats Available</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for s in schedules %}
+        <tr>
+          <td>{{ s.Schedule_ID }}</td>
+          <td><strong>{{ s.Flight_No }}</strong></td>
+          <td>{{ s.Source }} → {{ s.Destination }}</td>
+          <td>{{ s.Date }}</td>
+          <td>{{ s.Departure_Time[11:16] if s.Departure_Time|length > 11 else s.Departure_Time }}</td>
+          <td>{{ s.Arrival_Time[11:16] if s.Arrival_Time|length > 11 else s.Arrival_Time }}</td>
+          <td><small>{{ s.Aircraft_Model }}<br>{{ s.Registration_No }}</small></td>
+          <td>{{ s.Gate or '—' }}</td>
+          <td>
+            {% set pct = (s.Seats_Available / s.Total_Capacity * 100)|int if s.Total_Capacity > 0 else 0 %}
+            <strong class="{{ 'text-success' if pct > 30 else ('text-warning' if pct > 10 else 'text-danger') }}">{{ s.Seats_Available }}</strong> / {{ s.Total_Capacity }}
+          </td>
+          <td>
+            {% set st = s.Status|lower|replace(' ','-') %}
+            <span class="badge badge-{{ st }} rounded-pill px-3">{{ s.Status }}</span>
+          </td>
+          <td class="text-nowrap">
+            <a href="{{ url_for('schedule_edit', sid=s.Schedule_ID) }}" class="btn btn-sm btn-outline-primary me-1"><i class="fas fa-edit"></i></a>
+            <form method="POST" action="{{ url_for('schedule_delete', sid=s.Schedule_ID) }}" class="d-inline" onsubmit="return confirmAction('Delete this schedule?')">
+              <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="11" class="text-center text-muted py-4">No schedules found</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal: Quick Manual Schedule Input -->
+<div class="modal fade" id="quickScheduleModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title"><i class="fas fa-keyboard text-warning me-2"></i>Quick Manual Schedule Input</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('schedule_add') }}">
+        <div class="modal-body">
+          <div class="row mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">Flight No <span class="text-danger">*</span></label>
+              <input type="text" name="flight_no_manual" class="form-control" placeholder="e.g. AI-101" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">Aircraft ID <span class="text-danger">*</span></label>
+              <input type="number" name="aircraft_id_manual" class="form-control" placeholder="e.g. 1, 2" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Schedule Date <span class="text-danger">*</span></label>
+            <input type="date" name="date" class="form-control" required>
+          </div>
+          <div class="row mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">Departure Time <span class="text-danger">*</span></label>
+              <input type="datetime-local" name="departure_time" class="form-control" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">Arrival Time <span class="text-danger">*</span></label>
+              <input type="datetime-local" name="arrival_time" class="form-control" required>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">Gate</label>
+              <input type="text" name="gate" class="form-control" placeholder="e.g. A1">
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">Optional Schedule ID</label>
+              <input type="number" name="schedule_id" class="form-control" placeholder="Auto if empty">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Save Schedule</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Passengers — SkyReserve{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">Passengers</li>{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <h4 class="fw-bold mb-0"><i class="fas fa-users me-2 text-primary"></i>Passenger Directory</h4>
+  <div class="d-flex gap-2">
+    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#quickPassengerModal">
+      <i class="fas fa-keyboard me-1"></i> Quick Manual Input
+    </button>
+    <a href="{{ url_for('passenger_add') }}" class="btn btn-primary"><i class="fas fa-user-plus me-1"></i> Register Passenger</a>
+  </div>
+</div>
+
+<div class="table-card mb-4">
+  <div class="card-header">
+    <form method="GET" class="row g-2 align-items-end">
+      <div class="col-md-8">
+        <label class="form-label mb-1 small">Search by Name, Passport, or Email</label>
+        <input type="text" name="search" class="form-control form-control-sm" value="{{ search }}" placeholder="Search...">
+      </div>
+      <div class="col-md-4">
+        <button class="btn btn-primary btn-sm me-1"><i class="fas fa-search me-1"></i>Search</button>
+        <a href="{{ url_for('passengers') }}" class="btn btn-outline-secondary btn-sm">Clear</a>
+      </div>
+    </form>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Passport</th><th>Gender</th><th>Phone(s)</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for p in passengers %}
+        <tr>
+          <td>#{{ p.Passenger_ID }}</td>
+          <td><a href="{{ url_for('passenger_detail', pid=p.Passenger_ID) }}" class="text-decoration-none fw-semibold">{{ p.First_Name }} {{ p.Last_Name }}</a></td>
+          <td><small>{{ p.Email or '—' }}</small></td>
+          <td><code>{{ p.Passport_No or '—' }}</code></td>
+          <td>{{ p.Gender or '—' }}</td>
+          <td><small>{{ p.Phones or '—' }}</small></td>
+          <td class="text-nowrap">
+            <a href="{{ url_for('passenger_detail', pid=p.Passenger_ID) }}" class="btn btn-sm btn-outline-info me-1"><i class="fas fa-eye"></i></a>
+            <a href="{{ url_for('passenger_edit', pid=p.Passenger_ID) }}" class="btn btn-sm btn-outline-primary me-1"><i class="fas fa-edit"></i></a>
+            <form method="POST" action="{{ url_for('passenger_delete', pid=p.Passenger_ID) }}" class="d-inline" onsubmit="return confirmAction('Delete passenger {{ p.First_Name }} {{ p.Last_Name }}?')">
+              <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="text-center text-muted py-4">No passengers found</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal: Quick Manual Passenger Input -->
+<div class="modal fade" id="quickPassengerModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title"><i class="fas fa-keyboard text-warning me-2"></i>Quick Manual Passenger Input</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('passenger_add') }}">
+        <div class="modal-body">
+          <div class="row mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">First Name <span class="text-danger">*</span></label>
+              <input type="text" name="first_name" class="form-control" placeholder="e.g. Rahul" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">Last Name <span class="text-danger">*</span></label>
+              <input type="text" name="last_name" class="form-control" placeholder="e.g. Varma" required>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">Email</label>
+              <input type="email" name="email" class="form-control" placeholder="rahul@example.com">
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">Passport No</label>
+              <input type="text" name="passport_no" class="form-control" placeholder="e.g. P9876543">
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">Phone Number</label>
+              <input type="text" name="single_phone_number" class="form-control" placeholder="e.g. 9811223344">
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">Optional Passenger ID</label>
+              <input type="number" name="passenger_id" class="form-control" placeholder="Auto if empty">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Register Passenger</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

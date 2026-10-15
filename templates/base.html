@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}SkyReserve — Airline Reservation &amp; Operations{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #2563eb;
+      --primary-hover: #1d4ed8;
+      --nav-bg: #0f172a;
+      --nav-sub-bg: #1e293b;
+      --nav-border: #334155;
+    }
+    * { font-family: 'Inter', sans-serif; }
+    body {
+      background: #0f172a;
+      color: #f1f5f9;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Top Navigation Header ── */
+    .top-navbar-wrapper {
+      position: sticky;
+      top: 0;
+      z-index: 1030;
+      background: var(--nav-bg);
+      border-bottom: 1px solid var(--nav-border);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .top-header {
+      padding: 0.75rem 1.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .brand-logo {
+      color: #fff;
+      font-size: 1.35rem;
+      font-weight: 800;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      letter-spacing: -0.5px;
+    }
+    .brand-logo:hover { color: #60a5fa; }
+    .brand-logo i {
+      color: #38bdf8;
+      font-size: 1.45rem;
+      margin-right: 0.6rem;
+      filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.5));
+    }
+    .brand-subtitle {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      font-weight: 500;
+      margin-left: 0.5rem;
+      padding-left: 0.5rem;
+      border-left: 1px solid #334155;
+    }
+
+    /* Quick Action Pills in Header */
+    .header-quick-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-action-book {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.85rem;
+      padding: 0.42rem 0.9rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+    }
+    .btn-action-book:hover {
+      background: linear-gradient(135deg, #1d4ed8, #1e40af);
+      color: #fff;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.5);
+    }
+
+    .btn-action-map {
+      background: linear-gradient(135deg, #0d9488, #0f766e);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.85rem;
+      padding: 0.42rem 0.9rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(13, 148, 136, 0.35);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+    }
+    .btn-action-map:hover {
+      background: linear-gradient(135deg, #0f766e, #115e59);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    .btn-action-docs {
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.85rem;
+      padding: 0.42rem 0.9rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      transition: all 0.2s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+    }
+    .btn-action-docs:hover {
+      background: linear-gradient(135deg, #6d28d9, #5b21b6);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    .btn-action-manual {
+      background: linear-gradient(135deg, #d97706, #b45309);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.85rem;
+      padding: 0.42rem 0.9rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      transition: all 0.2s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+    }
+    .btn-action-manual:hover {
+      background: linear-gradient(135deg, #b45309, #92400e);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    /* ── Horizontal Navigation Bar (Red-Circled Items on Top) ── */
+    .nav-bar-container {
+      background: var(--nav-sub-bg);
+      padding: 0 1rem;
+      overflow-x: auto;
+      white-space: nowrap;
+      scrollbar-width: thin;
+      scrollbar-color: #475569 transparent;
+    }
+    .nav-bar-container::-webkit-scrollbar { height: 4px; }
+    .nav-bar-container::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+
+    .top-nav {
+      display: flex;
+      align-items: center;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      gap: 0.2rem;
+    }
+
+    .top-nav .nav-item {
+      display: inline-block;
+    }
+
+    .top-nav .nav-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      color: #cbd5e1;
+      font-size: 0.86rem;
+      font-weight: 500;
+      padding: 0.65rem 0.85rem;
+      border-bottom: 3px solid transparent;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      border-radius: 6px 6px 0 0;
+    }
+
+    .top-nav .nav-link:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+      border-bottom-color: #60a5fa;
+    }
+
+    .top-nav .nav-link.active {
+      color: #fff;
+      font-weight: 600;
+      background: rgba(37, 99, 235, 0.15);
+      border-bottom-color: #38bdf8;
+    }
+
+    .top-nav .nav-link i {
+      font-size: 0.95rem;
+      opacity: 0.9;
+    }
+
+    /* ── Main Layout & Cards (Dark & Polished) ── */
+    .main-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+    }
+
+    .sub-bar {
+      background: #1e293b;
+      border-bottom: 1px solid var(--nav-border);
+      padding: 0.6rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .sub-bar .breadcrumb { margin: 0; }
+    .sub-bar .breadcrumb-item a { color: #94a3b8; text-decoration: none; }
+    .sub-bar .breadcrumb-item a:hover { color: #38bdf8; }
+    .sub-bar .breadcrumb-item.active { color: #cbd5e1; font-weight: 500; }
+    .sub-bar .breadcrumb-item + .breadcrumb-item::before { color: #64748b; }
+
+    .content-area {
+      padding: 1.5rem;
+      flex: 1;
+      width: 100%;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    /* Dark theme cards */
+    .stat-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 1.25rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+      transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+    }
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.35);
+      border-color: #475569;
+    }
+    .stat-card .icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+    }
+    .stat-card h3 {
+      font-size: 1.65rem;
+      font-weight: 700;
+      margin: 0;
+      color: #f8fafc;
+    }
+    .stat-card small {
+      color: #94a3b8;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .table-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    .table-card .card-header {
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+      padding: 1rem 1.25rem;
+      font-weight: 600;
+      color: #f8fafc;
+    }
+
+    .table {
+      margin: 0;
+      color: #e2e8f0;
+      border-color: #334155;
+    }
+    .table thead th {
+      background: #0f172a;
+      border-bottom: 2px solid #334155;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #94a3b8;
+      font-weight: 600;
+      white-space: nowrap;
+      padding: 0.75rem 1rem;
+    }
+    .table tbody tr {
+      transition: background 0.12s;
+      border-bottom: 1px solid #334155;
+    }
+    .table tbody tr:hover {
+      background: rgba(51, 65, 85, 0.4);
+    }
+    .table td {
+      vertical-align: middle;
+      font-size: 0.88rem;
+      padding: 0.85rem 1rem;
+      border-color: #334155;
+      color: #f1f5f9;
+    }
+
+    /* Badges */
+    .badge-confirmed { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+    .badge-cancelled { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .badge-delayed { background: rgba(234, 179, 8, 0.2); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3); }
+    .badge-scheduled { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .badge-completed { background: rgba(147, 51, 234, 0.2); color: #c084fc; border: 1px solid rgba(147, 51, 234, 0.3); }
+    .badge-checked-in { background: rgba(20, 184, 166, 0.2); color: #2dd4bf; border: 1px solid rgba(20, 184, 166, 0.3); }
+    .badge-active { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+    .badge-maintenance { background: rgba(234, 179, 8, 0.2); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3); }
+    .badge-retired { background: rgba(148, 163, 184, 0.2); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); }
+    .badge-captain { background: rgba(139, 92, 246, 0.2); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); }
+    .badge-first-officer { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .badge-cabin-crew { background: rgba(236, 72, 153, 0.2); color: #f472b6; border: 1px solid rgba(236, 72, 153, 0.3); }
+    .badge-flight-engineer { background: rgba(20, 184, 166, 0.2); color: #2dd4bf; border: 1px solid rgba(20, 184, 166, 0.3); }
+    .badge-cabin-crew-lead { background: rgba(249, 115, 22, 0.2); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3); }
+    .badge-economy { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .badge-business { background: rgba(139, 92, 246, 0.2); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); }
+    .badge-first { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+    /* ── High-Contrast Typography & Dark Theme Readability ── */
+    .text-muted {
+      color: #94a3b8 !important;
+    }
+    .text-secondary {
+      color: #cbd5e1 !important;
+    }
+    small, .small {
+      color: #cbd5e1;
+    }
+    .form-label, label {
+      color: #f1f5f9 !important;
+      font-weight: 500;
+    }
+    .form-text {
+      color: #94a3b8 !important;
+    }
+    .stat-card small {
+      color: #94a3b8 !important;
+      font-weight: 600;
+    }
+    .table-card .card-header {
+      color: #ffffff !important;
+    }
+    .table td {
+      color: #f1f5f9 !important;
+    }
+    .table thead th {
+      color: #94a3b8 !important;
+    }
+    .breadcrumb-item a {
+      color: #94a3b8 !important;
+    }
+    .breadcrumb-item.active {
+      color: #f1f5f9 !important;
+      font-weight: 600;
+    }
+
+    /* Form Controls Dark Theme */
+    .form-control, .form-select {
+      background-color: #0f172a !important;
+      border: 1px solid #475569 !important;
+      color: #ffffff !important;
+    }
+    .form-control:focus, .form-select:focus {
+      background-color: #0f172a !important;
+      border-color: #38bdf8 !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 0 0.25rem rgba(56, 189, 248, 0.25) !important;
+    }
+    .form-control::placeholder {
+      color: #64748b !important;
+    }
+    .input-group-text {
+      background-color: #1e293b;
+      border-color: #475569;
+      color: #94a3b8;
+    }
+
+    .badge.bg-light.text-dark, .badge.bg-light {
+      background-color: #0f172a !important;
+      color: #38bdf8 !important;
+      border: 1px solid #475569 !important;
+    }
+
+    /* Modal Dark Theme */
+    .modal-content {
+      background-color: #1e293b !important;
+      color: #f1f5f9 !important;
+      border: 1px solid #475569 !important;
+    }
+    .modal-header, .modal-header.bg-light {
+      background-color: #0f172a !important;
+      border-bottom: 1px solid #334155 !important;
+      color: #ffffff !important;
+    }
+    .modal-header .modal-title {
+      color: #ffffff !important;
+    }
+    .modal-footer {
+      background-color: #0f172a !important;
+      border-top: 1px solid #334155 !important;
+    }
+    .btn-close { filter: invert(1) grayscale(100%) brightness(200%); }
+
+    /* Footer */
+    footer {
+      background: #0f172a;
+      border-top: 1px solid #334155;
+      padding: 1rem 1.5rem;
+      text-align: center;
+      font-size: 0.82rem;
+      color: #94a3b8;
+      margin-top: auto;
+    }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  <!-- Top Navigation Header & Menu Bar (Moved Red-Circled Options to Top!) -->
+  <header class="top-navbar-wrapper">
+    <!-- Top Header Bar -->
+    <div class="top-header">
+      <div class="d-flex align-items-center">
+        <a class="brand-logo" href="{{ url_for('dashboard') }}">
+          <i class="fas fa-plane-departure"></i>
+          <span>SkyReserve</span>
+        </a>
+        <span class="brand-subtitle d-none d-md-inline">Airline Operations &amp; Reservation DBMS</span>
+      </div>
+
+      <!-- Quick Action Buttons on Top -->
+      <div class="header-quick-actions">
+        <a href="{{ url_for('book_flight') }}" class="btn-action-book">
+          <i class="fas fa-search me-1"></i> Book a Flight
+        </a>
+        <a href="{{ url_for('flight_map') }}" class="btn-action-map">
+          <i class="fas fa-map-marked-alt me-1"></i> India Flight Map
+        </a>
+        <a href="{{ url_for('project_guide') }}" class="btn-action-docs">
+          <i class="fas fa-book-open me-1"></i> Project Guide &amp; Docs
+        </a>
+        <a href="{{ url_for('manual_entry') }}" class="btn-action-manual">
+          <i class="fas fa-keyboard me-1"></i> Manual Hub
+        </a>
+      </div>
+    </div>
+
+    <!-- Red-Circled Menu Options Moved to Top Navigation Bar -->
+    <nav class="nav-bar-container">
+      <ul class="top-nav">
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
+            <i class="fas fa-tachometer-alt text-primary"></i> Dashboard
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'book_flight' %}active{% endif %}" href="{{ url_for('book_flight') }}">
+            <i class="fas fa-ticket-alt text-success"></i> Book Flight
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'flight_map' %}active{% endif %}" href="{{ url_for('flight_map') }}">
+            <i class="fas fa-map-marked-alt text-info"></i> India Air Map
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if 'flight' in request.endpoint and 'schedule' not in request.endpoint and request.endpoint not in ['book_flight', 'flight_map'] %}active{% endif %}" href="{{ url_for('flights') }}">
+            <i class="fas fa-route text-primary"></i> Flights
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if 'schedule' in request.endpoint %}active{% endif %}" href="{{ url_for('schedules') }}">
+            <i class="fas fa-calendar-alt text-success"></i> Schedules
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if 'aircraft' in request.endpoint %}active{% endif %}" href="{{ url_for('aircraft_list') }}">
+            <i class="fas fa-plane text-pink"></i> Aircraft
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if 'passenger' in request.endpoint %}active{% endif %}" href="{{ url_for('passengers') }}">
+            <i class="fas fa-users text-purple"></i> Passengers
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if 'booking' in request.endpoint and 'baggage' not in request.endpoint and request.endpoint != 'book_flight' %}active{% endif %}" href="{{ url_for('bookings') }}">
+            <i class="fas fa-receipt text-warning"></i> Bookings
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if 'baggage' in request.endpoint %}active{% endif %}" href="{{ url_for('baggage_list') }}">
+            <i class="fas fa-suitcase-rolling text-info"></i> Baggage
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint in ['crew_list','crew_add','crew_edit','crew_detail'] %}active{% endif %}" href="{{ url_for('crew_list') }}">
+            <i class="fas fa-user-tie text-teal"></i> Crew
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if 'assignment' in request.endpoint %}active{% endif %}" href="{{ url_for('assignments') }}">
+            <i class="fas fa-clipboard-list text-orange"></i> Assignments
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'reports' %}active{% endif %}" href="{{ url_for('reports') }}">
+            <i class="fas fa-chart-pie text-indigo"></i> Reports
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'project_guide' %}active{% endif %}" href="{{ url_for('project_guide') }}">
+            <i class="fas fa-book-open text-info"></i> Project Guide
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if 'manual_entry' in request.endpoint %}active{% endif %}" href="{{ url_for('manual_entry') }}">
+            <i class="fas fa-keyboard text-warning"></i> Manual Hub
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- Main Content Layout -->
+  <div class="main-wrapper">
+    <div class="sub-bar">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Home</a></li>
+          {% block breadcrumb %}{% endblock %}
+        </ol>
+      </nav>
+      <div class="text-muted" style="font-size:0.82rem">
+        <i class="fas fa-clock me-1 text-primary"></i> <span id="sys-live-time">Live System</span>
+      </div>
+    </div>
+
+    <!-- Flash messages -->
+    <div class="content-area">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show" role="alert" style="border-radius:10px; border: 1px solid rgba(255,255,255,0.1)">
+              {% if category == 'success' %}<i class="fas fa-check-circle me-1"></i>
+              {% elif category in ['danger', 'error'] %}<i class="fas fa-exclamation-circle me-1"></i>
+              {% elif category == 'warning' %}<i class="fas fa-exclamation-triangle me-1"></i>
+              {% else %}<i class="fas fa-info-circle me-1"></i>
+              {% endif %}
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </div>
+
+    <footer>
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 px-3">
+        <div>&copy; 2026 <strong>SkyReserve</strong> — Relational Airline Reservation &amp; Flight Operations System (DBMS Project)</div>
+        <div>
+          <span class="badge bg-primary-subtle text-primary border border-primary border-opacity-25 me-1">MySQL 3NF/BCNF (InnoDB)</span>
+          <span class="badge bg-success-subtle text-success border border-success border-opacity-25 me-1">Triggers Active</span>
+          <span class="badge bg-info-subtle text-info border border-info border-opacity-25">All 18 FRs Implemented</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function updateLiveTime() {
+      const now = new Date();
+      const el = document.getElementById('sys-live-time');
+      if (el) {
+        el.textContent = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + now.toLocaleTimeString('en-GB');
+      }
+    }
+    updateLiveTime();
+    setInterval(updateLiveTime, 1000);
+    function confirmAction(msg){ return confirm(msg || 'Are you sure you want to proceed?'); }
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

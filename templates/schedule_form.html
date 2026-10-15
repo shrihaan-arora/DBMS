@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit Schedule' if schedule else 'Add Schedule' }} — SkyReserve{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('schedules') }}" class="text-decoration-none">Schedules</a></li>
+<li class="breadcrumb-item active">{{ 'Edit' if schedule else 'Add' }}</li>
+{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="table-card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-{{ 'edit' if schedule else 'plus' }} me-2"></i>{{ 'Edit Schedule' if schedule else 'Add New Schedule' }}</span>
+        {% if not schedule %}<span class="badge bg-warning-subtle text-warning-emphasis border">Supports Manual Input</span>{% endif %}
+      </div>
+      <div class="p-4">
+        <form method="POST" action="{{ url_for('schedule_edit', sid=schedule.Schedule_ID) if schedule else url_for('schedule_add') }}">
+          {% if not schedule %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Schedule ID (Optional Manual Primary Key)</label>
+            <input type="number" name="schedule_id" class="form-control" placeholder="Leave empty for AUTOINCREMENT">
+          </div>
+          {% endif %}
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Flight (Select or Type Manually) <span class="text-danger">*</span></label>
+              <input type="text" name="flight_no_manual" id="flightNoInput" class="form-control mb-1" value="{{ schedule.Flight_No if schedule else '' }}" placeholder="Type Flight No (e.g. AI-101)" required>
+              <select class="form-select form-select-sm" onchange="if(this.value) document.getElementById('flightNoInput').value=this.value;">
+                <option value="">— Or select from list —</option>
+                {% for f in flights %}
+                <option value="{{ f.Flight_No }}" {% if schedule and schedule.Flight_No == f.Flight_No %}selected{% endif %}>{{ f.Flight_No }} ({{ f.Source }} → {{ f.Destination }})</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Aircraft (Select or Type ID) <span class="text-danger">*</span></label>
+              <input type="number" name="aircraft_id_manual" id="aircraftIdInput" class="form-control mb-1" value="{{ schedule.Aircraft_ID if schedule else '' }}" placeholder="Type Aircraft ID (e.g. 1)" required>
+              <select class="form-select form-select-sm" onchange="if(this.value) document.getElementById('aircraftIdInput').value=this.value;">
+                <option value="">— Or select from fleet —</option>
+                {% for a in aircraft %}
+                <option value="{{ a.Aircraft_ID }}" {% if schedule and schedule.Aircraft_ID == a.Aircraft_ID %}selected{% endif %}>#{{ a.Aircraft_ID }}: {{ a.Registration_No }} — {{ a.Model }} ({{ a.Total_Capacity }} seats)</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Date <span class="text-danger">*</span></label>
+            <input type="date" name="date" class="form-control" value="{{ schedule.Date if schedule else '' }}" required>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Departure Time <span class="text-danger">*</span></label>
+              <input type="datetime-local" name="departure_time" class="form-control" value="{{ schedule.Departure_Time[:16] if schedule and schedule.Departure_Time else '' }}" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Arrival Time <span class="text-danger">*</span></label>
+              <input type="datetime-local" name="arrival_time" class="form-control" value="{{ schedule.Arrival_Time[:16] if schedule and schedule.Arrival_Time else '' }}" required>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Status</label>
+              <select name="status" class="form-select">
+                {% for s in ['Scheduled','On-Time','Delayed','Cancelled','Completed'] %}
+                <option value="{{ s }}" {% if schedule and schedule.Status == s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Gate</label>
+              <input type="text" name="gate" class="form-control" value="{{ schedule.Gate if schedule and schedule.Gate else '' }}" placeholder="e.g. A1">
+            </div>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>{{ 'Update' if schedule else 'Create Schedule' }}</button>
+            <a href="{{ url_for('schedules') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,491 @@
+{% extends "base.html" %}
+{% block title %}Book a Flight — SkyReserve{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Flight Reservation</li>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .flight-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+    transition: all 0.2s ease;
+  }
+  .flight-card:hover {
+    border-color: #38bdf8;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    transform: translateY(-2px);
+  }
+  .route-line {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 120px;
+  }
+  .route-line::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background: #475569;
+    z-index: 1;
+  }
+  .route-plane {
+    position: relative;
+    z-index: 2;
+    background: #1e293b;
+    padding: 0 6px;
+    color: #38bdf8;
+  }
+  .quick-route-pill {
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: #cbd5e1;
+    font-size: 0.8rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .quick-route-pill:hover {
+    background: #334155;
+    color: #fff;
+    border-color: #38bdf8;
+  }
+  .fare-tag {
+    background: rgba(37, 99, 235, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 8px;
+    padding: 0.5rem 0.85rem;
+    text-align: center;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h4 class="fw-bold mb-1"><i class="fas fa-ticket-alt text-primary me-2"></i>Search &amp; Book Flights</h4>
+    <p class="text-muted mb-0 small">Real-time seat availability (FR3, FR7, FR8, FR10) backed by dynamic SQL views &amp; concurrency triggers.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('flight_map') }}" class="btn btn-outline-info btn-sm">
+      <i class="fas fa-map-marked-alt me-1"></i> View on India Map
+    </a>
+    <a href="{{ url_for('manual_entry', tab='bookings') }}" class="btn btn-outline-warning btn-sm">
+      <i class="fas fa-keyboard me-1"></i> Manual Entry Hub
+    </a>
+  </div>
+</div>
+
+<!-- Search Widget Card -->
+<div class="table-card p-4 mb-4">
+  <form method="GET" action="{{ url_for('book_flight') }}" id="searchFlightForm">
+    <div class="row g-3 align-items-end">
+      <!-- Source -->
+      <div class="col-lg-3 col-md-6">
+        <label class="form-label small fw-semibold text-muted"><i class="fas fa-plane-departure text-primary me-1"></i> Departure Airport</label>
+        <select class="form-select" name="source" id="sourceSelect" required>
+          <option value="">Select Origin City / Code</option>
+          {% for a in airports %}
+          <option value="{{ a.code }}" {% if source == a.code %}selected{% endif %}>
+            {{ a.code }} — {{ a.city }} ({{ a.name }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Swap Button (desktop) -->
+      <div class="col-lg-1 col-md-12 text-center d-flex align-items-end justify-content-center pb-1">
+        <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle px-2 py-1" onclick="swapAirports()" title="Swap Origin & Destination">
+          <i class="fas fa-exchange-alt"></i>
+        </button>
+      </div>
+
+      <!-- Destination -->
+      <div class="col-lg-3 col-md-6">
+        <label class="form-label small fw-semibold text-muted"><i class="fas fa-plane-arrival text-success me-1"></i> Destination Airport</label>
+        <select class="form-select" name="destination" id="destSelect" required>
+          <option value="">Select Destination City / Code</option>
+          {% for a in airports %}
+          <option value="{{ a.code }}" {% if destination == a.code %}selected{% endif %}>
+            {{ a.code }} — {{ a.city }} ({{ a.name }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Travel Date -->
+      <div class="col-lg-2 col-md-6">
+        <label class="form-label small fw-semibold text-muted"><i class="fas fa-calendar-day text-warning me-1"></i> Travel Date</label>
+        <input type="date" class="form-control" name="date" value="{{ date }}" id="travelDateInput">
+      </div>
+
+      <!-- Class -->
+      <div class="col-lg-2 col-md-6">
+        <label class="form-label small fw-semibold text-muted"><i class="fas fa-couch text-info me-1"></i> Travel Class</label>
+        <select class="form-select" name="class" id="classSelect">
+          <option value="Economy" {% if travel_class == 'Economy' %}selected{% endif %}>Economy</option>
+          <option value="Business" {% if travel_class == 'Business' %}selected{% endif %}>Business</option>
+          <option value="First" {% if travel_class == 'First' %}selected{% endif %}>First Class</option>
+        </select>
+      </div>
+
+      <!-- Submit Search -->
+      <div class="col-12 text-end pt-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-1 flex-wrap">
+          <small class="text-muted me-2">Popular corridors:</small>
+          <a href="{{ url_for('book_flight', source='DEL', destination='BOM') }}" class="quick-route-pill">DEL &rarr; BOM</a>
+          <a href="{{ url_for('book_flight', source='BOM', destination='BLR') }}" class="quick-route-pill">BOM &rarr; BLR</a>
+          <a href="{{ url_for('book_flight', source='DEL', destination='BLR') }}" class="quick-route-pill">DEL &rarr; BLR</a>
+          <a href="{{ url_for('book_flight', source='BLR', destination='HYD') }}" class="quick-route-pill">BLR &rarr; HYD</a>
+          <a href="{{ url_for('book_flight', source='DEL', destination='MAA') }}" class="quick-route-pill">DEL &rarr; MAA</a>
+          <a href="{{ url_for('book_flight', source='DEL', destination='CCU') }}" class="quick-route-pill">DEL &rarr; CCU</a>
+          <a href="{{ url_for('book_flight', source='BLR', destination='GOI') }}" class="quick-route-pill">BLR &rarr; GOI</a>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="{{ url_for('book_flight') }}" class="btn btn-outline-secondary btn-sm">Reset</a>
+          <button type="submit" class="btn btn-primary px-4 fw-semibold">
+            <i class="fas fa-search me-1"></i> Search Flights
+          </button>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Alternative Flights Notice (if exact date has no direct match) -->
+{% if alternative_flights %}
+<div class="alert alert-info border-info border-opacity-25 mb-4" style="background:#0f172a">
+  <div class="d-flex align-items-center gap-2">
+    <i class="fas fa-info-circle text-info fs-5"></i>
+    <div>
+      <strong>Notice:</strong> No scheduled flight found on <code>{{ date }}</code> for corridor <strong>{{ source }} &rarr; {{ destination }}</strong>.
+      Below are upcoming scheduled occurrences on this corridor with verified seat availability:
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Flight Results List -->
+<div class="mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="fw-bold mb-0">
+      <i class="fas fa-plane text-info me-2"></i>
+      Available Flights 
+      <span class="badge bg-primary-subtle text-primary border border-primary border-opacity-25 ms-1">
+        {{ (flights | length) + (alternative_flights | length) }} flight(s)
+      </span>
+    </h5>
+    <small class="text-muted">Seats derived in real-time from <code>Available_Seats</code> View</small>
+  </div>
+
+  {% set display_flights = flights if flights else alternative_flights %}
+
+  {% for f in display_flights %}
+  <div class="flight-card">
+    <div class="row align-items-center g-3">
+      <!-- Airline & Flight No -->
+      <div class="col-lg-3 col-md-4">
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <span class="badge 
+            {% if 'Air India' in f.Airline %}bg-danger
+            {% elif 'IndiGo' in f.Airline %}bg-primary
+            {% elif 'SpiceJet' in f.Airline %}bg-warning text-dark
+            {% elif 'Vistara' in f.Airline %}bg-purple text-white
+            {% else %}bg-secondary{% endif %} px-2 py-1">
+            {{ f.Airline }}
+          </span>
+          <strong class="fs-5 text-white">{{ f.Flight_No }}</strong>
+        </div>
+        <small class="text-muted d-block">
+          <i class="fas fa-plane-alt me-1 text-secondary"></i> {{ f.Aircraft_Model }}
+        </small>
+        <small class="text-muted d-block">
+          <i class="fas fa-door-open me-1 text-secondary"></i> Gate: <strong>{{ f.Gate if f.Gate else 'TBD' }}</strong>
+        </small>
+      </div>
+
+      <!-- Route & Times -->
+      <div class="col-lg-4 col-md-5">
+        <div class="d-flex align-items-center justify-content-between">
+          <div class="text-center">
+            <h5 class="fw-bold mb-0 text-white">{{ f.Source }}</h5>
+            <small class="text-info fw-semibold">{{ f.Departure_Time[11:16] if 'T' in f.Departure_Time else f.Departure_Time[:5] }}</small>
+            <div class="text-muted" style="font-size:0.75rem">{{ f.Date }}</div>
+          </div>
+
+          <div class="route-line text-center">
+            <span class="route-plane"><i class="fas fa-plane"></i></span>
+          </div>
+
+          <div class="text-center">
+            <h5 class="fw-bold mb-0 text-white">{{ f.Destination }}</h5>
+            <small class="text-info fw-semibold">{{ f.Arrival_Time[11:16] if 'T' in f.Arrival_Time else f.Arrival_Time[:5] }}</small>
+            <div class="text-muted" style="font-size:0.75rem">{{ f.Date }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seat Availability & Capacity -->
+      <div class="col-lg-3 col-md-3 text-center text-lg-start">
+        <div class="mb-1">
+          <span class="badge {% if f.Seats_Available > 20 %}badge-confirmed{% elif f.Seats_Available > 0 %}badge-delayed{% else %}badge-cancelled{% endif %} px-3 py-1 fs-6">
+            <i class="fas fa-chair me-1"></i> {{ f.Seats_Available }} Seats Left
+          </span>
+        </div>
+        <small class="text-muted d-block">
+          Capacity: {{ f.Total_Capacity }} seats total
+        </small>
+        {% set occ_pct = ((f.Total_Capacity - f.Seats_Available) / f.Total_Capacity * 100) | round | int %}
+        <div class="progress mt-1" style="height: 6px; background: #334155;">
+          <div class="progress-bar {% if occ_pct > 80 %}bg-warning{% else %}bg-info{% endif %}" role="progressbar" style="width: {{ occ_pct }}%"></div>
+        </div>
+        <small class="text-muted" style="font-size:0.75rem">{{ occ_pct }}% Booked</small>
+      </div>
+
+      <!-- Action & Fare -->
+      <div class="col-lg-2 col-md-12 text-center text-lg-end">
+        <div class="mb-2">
+          <span class="text-muted small">Starting from</span>
+          <h4 class="text-success fw-bold mb-0">₹{{ '4,999' if 'Economy' in travel_class else ('12,500' if 'Business' in travel_class else '22,000') }}</h4>
+        </div>
+        <button type="button" class="btn btn-success w-100 fw-semibold"
+                onclick="openBookingModal('{{ f.Schedule_ID }}', '{{ f.Flight_No }}', '{{ f.Airline }}', '{{ f.Source }}', '{{ f.Destination }}', '{{ f.Date }}', '{{ f.Seats_Available }}', '{{ f.Aircraft_Model }}')">
+          <i class="fas fa-ticket-alt me-1"></i> Book Now
+        </button>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="table-card p-5 text-center">
+    <div class="mb-3 text-muted"><i class="fas fa-plane-slash fa-3x"></i></div>
+    <h5 class="fw-bold">No Flights Found</h5>
+    <p class="text-muted mb-4">No scheduled flights match your search parameters. Try choosing different airports or clearing filters.</p>
+    <a href="{{ url_for('book_flight') }}" class="btn btn-outline-primary btn-sm">
+      <i class="fas fa-redo me-1"></i> Show All Available Flights
+    </a>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Interactive Booking Modal (FR7, FR8, FR11) -->
+<div class="modal fade" id="bookingModal" tabindex="-1" aria-labelledby="bookingModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('book_flight_confirm') }}" id="confirmBookingForm">
+        <input type="hidden" name="schedule_id" id="modalScheduleId">
+        <input type="hidden" name="source" value="{{ source }}">
+        <input type="hidden" name="destination" value="{{ destination }}">
+        <input type="hidden" name="date" value="{{ date }}">
+
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="bookingModalLabel">
+            <i class="fas fa-plane-departure text-primary me-2"></i>
+            Confirm Reservation — <span id="modalFlightNo">Flight</span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body p-4">
+          <!-- Flight Summary Ribbon -->
+          <div class="p-3 mb-4 rounded-3" style="background:#0f172a; border: 1px solid #334155;">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <div>
+                <strong class="text-white fs-5" id="modalRouteText">DEL &rarr; BOM</strong>
+                <span class="badge bg-primary ms-2" id="modalAirlineBadge">Airline</span>
+              </div>
+              <div class="text-end">
+                <span class="text-muted small">Travel Date:</span>
+                <strong class="text-info d-block" id="modalDateText">2026-10-10</strong>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top border-secondary border-opacity-25 text-muted small">
+              <span>Aircraft: <strong class="text-white" id="modalAircraftText">Boeing 787</strong></span>
+              <span>Available Seats: <strong class="text-success" id="modalSeatsAvailText">254</strong></span>
+            </div>
+          </div>
+
+          <!-- Passenger Choice Tabs -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold text-muted mb-2">Passenger Information</label>
+            <ul class="nav nav-pills mb-3" id="paxTabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active btn-sm" id="existing-tab" data-bs-toggle="pill" data-bs-target="#tab-existing" type="button" role="tab" onclick="setPaxChoice('existing')">
+                  <i class="fas fa-user-check me-1"></i> Existing Registered Passenger
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link btn-sm" id="new-tab" data-bs-toggle="pill" data-bs-target="#tab-new" type="button" role="tab" onclick="setPaxChoice('new')">
+                  <i class="fas fa-user-plus me-1"></i> Register New Passenger
+                </button>
+              </li>
+            </ul>
+            <input type="hidden" name="pax_choice" id="paxChoiceInput" value="existing">
+
+            <div class="tab-content">
+              <!-- Tab 1: Existing Passenger -->
+              <div class="tab-pane fade show active" id="tab-existing" role="tabpanel">
+                <select class="form-select" name="passenger_id" id="modalPassengerSelect">
+                  <option value="">Select Existing Passenger</option>
+                  {% for p in passengers %}
+                  <option value="{{ p.Passenger_ID }}">
+                    #{{ p.Passenger_ID }} — {{ p.First_Name }} {{ p.Last_Name }} (Passport: {{ p.Passport_No }})
+                  </option>
+                  {% endfor %}
+                </select>
+                <small class="text-muted">Or switch tabs above to register a new passenger on the fly.</small>
+              </div>
+
+              <!-- Tab 2: New Passenger (FR6 Multivalued contacts) -->
+              <div class="tab-pane fade" id="tab-new" role="tabpanel">
+                <div class="row g-2">
+                  <div class="col-md-6">
+                    <label class="form-label small text-muted">First Name *</label>
+                    <input type="text" class="form-control form-control-sm" name="first_name" placeholder="e.g. Ramesh">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small text-muted">Last Name *</label>
+                    <input type="text" class="form-control form-control-sm" name="last_name" placeholder="e.g. Sharma">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small text-muted">Email</label>
+                    <input type="email" class="form-control form-control-sm" name="email" placeholder="ramesh@example.com">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small text-muted">Passport Number *</label>
+                    <input type="text" class="form-control form-control-sm" name="passport_no" placeholder="e.g. Z1234567">
+                  </div>
+                  <div class="col-md-8">
+                    <label class="form-label small text-muted">Phone Number (1NF Decomposed)</label>
+                    <input type="tel" class="form-control form-control-sm" name="phone_number" placeholder="e.g. +91 9876543210">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label small text-muted">Phone Type</label>
+                    <select class="form-select form-select-sm" name="phone_type">
+                      <option value="Mobile" selected>Mobile</option>
+                      <option value="Home">Home</option>
+                      <option value="Work">Work</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Seat & Class Configuration -->
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <label class="form-label fw-semibold text-muted">Travel Class</label>
+              <select class="form-select" name="class" id="modalClassSelect" onchange="updateModalFare()">
+                <option value="Economy" selected>Economy</option>
+                <option value="Business">Business</option>
+                <option value="First">First Class</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold text-muted">Seat Number</label>
+              <input type="text" class="form-control text-uppercase" name="seat_no" id="modalSeatInput" placeholder="Auto-assign if blank" style="letter-spacing:1px">
+              <small class="text-muted" style="font-size:0.75rem">e.g. 12A, 14C. Enforced unique.</small>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold text-muted">Calculated Fare (₹)</label>
+              <input type="number" step="0.01" class="form-control fw-bold text-success" name="fare" id="modalFareInput" value="4999.00">
+            </div>
+          </div>
+
+          <!-- Weak Entity Baggage Option (FR11, FR12) -->
+          <div class="p-3 rounded-3" style="background:#0f172a; border: 1px dashed #334155;">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <label class="fw-semibold text-white mb-0">
+                <i class="fas fa-suitcase-rolling text-warning me-1"></i> Add Baggage (Weak Entity — FR11)
+              </label>
+              <span class="badge bg-info-subtle text-info border border-info border-opacity-25">Max 23kg standard</span>
+            </div>
+            <div class="row g-2">
+              <div class="col-md-6">
+                <input type="number" step="0.1" class="form-control form-control-sm" name="baggage_weight" placeholder="Weight in kg (e.g. 15.5)">
+              </div>
+              <div class="col-md-6">
+                <select class="form-select form-select-sm" name="baggage_type">
+                  <option value="Checked" selected>Checked Baggage</option>
+                  <option value="Cabin">Cabin Carry-on</option>
+                  <option value="Special">Special / Oversized</option>
+                </select>
+              </div>
+            </div>
+            <small class="text-muted d-block mt-1" style="font-size:0.75rem">
+              Identified by composite key <code>(Booking_ID, Baggage_Seq_No)</code>. Auto-cascades on booking deletion.
+            </small>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary fw-semibold px-4">
+            <i class="fas fa-check-circle me-1"></i> Confirm &amp; Issue Ticket
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function swapAirports() {
+    const src = document.getElementById('sourceSelect');
+    const dst = document.getElementById('destSelect');
+    const tmp = src.value;
+    src.value = dst.value;
+    dst.value = tmp;
+  }
+
+  function setPaxChoice(choice) {
+    document.getElementById('paxChoiceInput').value = choice;
+    const existingSelect = document.getElementById('modalPassengerSelect');
+    if (choice === 'new') {
+      existingSelect.removeAttribute('required');
+    } else {
+      existingSelect.setAttribute('required', 'required');
+    }
+  }
+
+  function openBookingModal(schedId, flightNo, airline, source, destination, date, seatsAvail, aircraft) {
+    document.getElementById('modalScheduleId').value = schedId;
+    document.getElementById('modalFlightNo').textContent = flightNo;
+    document.getElementById('modalAirlineBadge').textContent = airline;
+    document.getElementById('modalRouteText').textContent = source + ' → ' + destination;
+    document.getElementById('modalDateText').textContent = date;
+    document.getElementById('modalSeatsAvailText').textContent = seatsAvail + ' seats remaining';
+    document.getElementById('modalAircraftText').textContent = aircraft;
+
+    // Reset fields
+    updateModalFare();
+    const modal = new bootstrap.Modal(document.getElementById('bookingModal'));
+    modal.show();
+  }
+
+  function updateModalFare() {
+    const cls = document.getElementById('modalClassSelect').value;
+    const fareInput = document.getElementById('modalFareInput');
+    if (cls === 'Economy') {
+      fareInput.value = '4999.00';
+    } else if (cls === 'Business') {
+      fareInput.value = '12500.00';
+    } else if (cls === 'First') {
+      fareInput.value = '22000.00';
+    }
+  }
+</script>
+{% endblock %}

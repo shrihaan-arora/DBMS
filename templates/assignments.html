@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Crew Assignments — SkyReserve{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">Assignments</li>{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <h4 class="fw-bold mb-0"><i class="fas fa-clipboard-list me-2 text-primary"></i>Crew Flight Assignments</h4>
+  <div class="d-flex gap-2">
+    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#quickAssignmentModal">
+      <i class="fas fa-keyboard me-1"></i> Quick Manual Input
+    </button>
+    <a href="{{ url_for('assignment_add') }}" class="btn btn-primary"><i class="fas fa-plus me-1"></i> New Assignment</a>
+  </div>
+</div>
+
+<div class="table-card mb-4">
+  <div class="card-header">
+    <span class="fw-semibold"><i class="fas fa-tasks me-2"></i>Flight Crew Roster &amp; Operational Assignments</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Crew Member</th>
+          <th>Role</th>
+          <th>Flight No</th>
+          <th>Route</th>
+          <th>Date</th>
+          <th>Departure Time</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in assignments %}
+        <tr>
+          <td>#{{ a.Assignment_ID }}</td>
+          <td>
+            <a href="{{ url_for('crew_detail', cid=a.Crew_ID) }}" class="fw-bold text-decoration-none">
+              {{ a.Crew_Name }}
+            </a>
+          </td>
+          <td>
+            {% set rl = a.Role|lower|replace(' ', '-') %}
+            <span class="badge badge-{{ rl }} rounded-pill px-2">{{ a.Role }}</span>
+          </td>
+          <td><strong>{{ a.Flight_No }}</strong></td>
+          <td><span class="badge bg-light text-dark border">{{ a.Source }} → {{ a.Destination }}</span></td>
+          <td>{{ a.Date }}</td>
+          <td>{{ a.Departure_Time[11:16] if a.Departure_Time|length > 11 else a.Departure_Time }}</td>
+          <td>
+            <form method="POST" action="{{ url_for('assignment_delete', aid=a.Assignment_ID) }}" class="d-inline" onsubmit="return confirmAction('Remove this flight assignment?')">
+              <button class="btn btn-sm btn-outline-danger" title="Delete Assignment"><i class="fas fa-trash"></i></button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="text-center text-muted py-4">No crew assignments recorded</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal: Quick Manual Assignment Input -->
+<div class="modal fade" id="quickAssignmentModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title"><i class="fas fa-keyboard text-warning me-2"></i>Quick Manual Assignment Input</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('assignment_add') }}">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Crew Member ID <span class="text-danger">*</span></label>
+            <input type="number" name="crew_id_manual" class="form-control" placeholder="e.g. 1, 2" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Schedule ID <span class="text-danger">*</span></label>
+            <input type="number" name="schedule_id_manual" class="form-control" placeholder="e.g. 1, 3" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Optional Assignment ID</label>
+            <input type="number" name="assignment_id" class="form-control" placeholder="Auto if empty">
+          </div>
+          <div class="alert alert-light border small">
+            <i class="fas fa-shield-alt text-primary me-1"></i> Overlap prevention (FR14) is automatically validated upon submission.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Save Assignment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

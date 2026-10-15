@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}SQL Query Result — SkyReserve{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('manual_entry', tab='sql') }}" class="text-decoration-none">Manual Input Hub</a></li>
+<li class="breadcrumb-item active">SQL Result</li>
+{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="fw-bold mb-0"><i class="fas fa-terminal text-primary me-2"></i>SQL Execution Result</h4>
+  <a href="{{ url_for('manual_entry', tab='sql') }}" class="btn btn-outline-primary btn-sm"><i class="fas fa-arrow-left me-1"></i> Back to Console</a>
+</div>
+
+<div class="table-card mb-4 p-3 bg-light">
+  <small class="text-muted d-block mb-1">Executed Statement:</small>
+  <pre class="mb-0 font-monospace text-dark"><code>{{ sql }}</code></pre>
+</div>
+
+<div class="table-card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="fas fa-table me-2"></i>Result Set ({{ rows|length }} rows)</span>
+    <span class="badge bg-success-subtle text-success border">Query Successful</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover table-striped">
+      <thead>
+        <tr>
+          {% for h in headers %}
+          <th>{{ h }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          {% for cell in r %}
+          <td>{{ cell if cell is not none else 'NULL' }}</td>
+          {% endfor %}
+        </tr>
+        {% else %}
+        <tr><td colspan="{{ headers|length if headers else 1 }}" class="text-center text-muted py-4">No rows returned</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

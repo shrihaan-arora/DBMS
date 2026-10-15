@@ -1,0 +1,614 @@
+{% extends "base.html" %}
+{% block title %}Manual Data Input Console — SkyReserve{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">Manual Data Input Hub</li>{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h4 class="fw-bold mb-1"><i class="fas fa-keyboard text-warning me-2"></i>Manual Data Input Hub</h4>
+    <small class="text-muted">Directly input, insert, or script custom records manually across all database entities.</small>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('manual_entry', tab='sql') }}" class="btn btn-outline-dark btn-sm"><i class="fas fa-terminal me-1"></i> Direct SQL Console</a>
+    <a href="{{ url_for('manual_entry', tab='bulk') }}" class="btn btn-outline-primary btn-sm"><i class="fas fa-file-import me-1"></i> Bulk JSON Input</a>
+  </div>
+</div>
+
+<!-- Category Tabs -->
+<ul class="nav nav-pills nav-fill table-card p-2 mb-4 flex-wrap gap-1" role="tablist">
+  <li class="nav-item">
+    <a class="nav-link py-2 px-3 {% if current_tab == 'flights' %}active bg-primary{% endif %}" href="{{ url_for('manual_entry', tab='flights') }}">
+      <i class="fas fa-route me-1"></i> Flights <span class="badge bg-light text-dark ms-1">{{ counts.flights }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link py-2 px-3 {% if current_tab == 'schedules' %}active bg-primary{% endif %}" href="{{ url_for('manual_entry', tab='schedules') }}">
+      <i class="fas fa-calendar-alt me-1"></i> Schedules <span class="badge bg-light text-dark ms-1">{{ counts.schedules }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link py-2 px-3 {% if current_tab == 'aircraft' %}active bg-primary{% endif %}" href="{{ url_for('manual_entry', tab='aircraft') }}">
+      <i class="fas fa-plane me-1"></i> Aircraft <span class="badge bg-light text-dark ms-1">{{ counts.aircraft }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link py-2 px-3 {% if current_tab == 'passengers' %}active bg-primary{% endif %}" href="{{ url_for('manual_entry', tab='passengers') }}">
+      <i class="fas fa-users me-1"></i> Passengers <span class="badge bg-light text-dark ms-1">{{ counts.passengers }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link py-2 px-3 {% if current_tab == 'bookings' %}active bg-primary{% endif %}" href="{{ url_for('manual_entry', tab='bookings') }}">
+      <i class="fas fa-ticket-alt me-1"></i> Bookings <span class="badge bg-light text-dark ms-1">{{ counts.bookings }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link py-2 px-3 {% if current_tab == 'baggage' %}active bg-primary{% endif %}" href="{{ url_for('manual_entry', tab='baggage') }}">
+      <i class="fas fa-suitcase-rolling me-1"></i> Baggage <span class="badge bg-light text-dark ms-1">{{ counts.baggage }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link py-2 px-3 {% if current_tab == 'crew' %}active bg-primary{% endif %}" href="{{ url_for('manual_entry', tab='crew') }}">
+      <i class="fas fa-user-tie me-1"></i> Crew <span class="badge bg-light text-dark ms-1">{{ counts.crew }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link py-2 px-3 {% if current_tab == 'assignments' %}active bg-primary{% endif %}" href="{{ url_for('manual_entry', tab='assignments') }}">
+      <i class="fas fa-clipboard-list me-1"></i> Assignments <span class="badge bg-light text-dark ms-1">{{ counts.assignments }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link py-2 px-3 {% if current_tab == 'sql' %}active bg-dark text-white{% endif %}" href="{{ url_for('manual_entry', tab='sql') }}">
+      <i class="fas fa-code me-1"></i> Raw SQL
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link py-2 px-3 {% if current_tab == 'bulk' %}active bg-info text-dark{% endif %}" href="{{ url_for('manual_entry', tab='bulk') }}">
+      <i class="fas fa-cubes me-1"></i> Bulk JSON
+    </a>
+  </li>
+</ul>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="table-card">
+      <!-- 1. FLIGHTS TAB -->
+      {% if current_tab == 'flights' %}
+      <div class="card-header bg-light"><i class="fas fa-route text-primary me-2"></i>Manual Input: Flight Entity</div>
+      <div class="p-4">
+        <form method="POST" action="{{ url_for('flight_add') }}">
+          <input type="hidden" name="redirect_to" value="manual_entry">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Flight Number (Primary Key) <span class="text-danger">*</span></label>
+            <input type="text" name="flight_no" class="form-control" placeholder="e.g. AI-999, 6E-555" required>
+            <div class="form-text">Unique alphanumeric identifier (e.g., airline IATA prefix + number).</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Airline Name <span class="text-danger">*</span></label>
+            <input type="text" name="airline" class="form-control" placeholder="e.g. Air India, IndiGo, Vistara" required>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Source Airport Code <span class="text-danger">*</span></label>
+              <input type="text" name="source" class="form-control" placeholder="e.g. DEL, BOM, BLR" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Destination Airport Code <span class="text-danger">*</span></label>
+              <input type="text" name="destination" class="form-control" placeholder="e.g. BOM, HYD, MAA" required>
+              <div class="form-text">Constraint enforced: <code>Source != Destination</code></div>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Insert Flight Tuple</button>
+        </form>
+      </div>
+
+      <!-- 2. SCHEDULES TAB -->
+      {% elif current_tab == 'schedules' %}
+      <div class="card-header bg-light"><i class="fas fa-calendar-alt text-primary me-2"></i>Manual Input: Flight Schedule Entity</div>
+      <div class="p-4">
+        <form method="POST" action="{{ url_for('schedule_add') }}">
+          <input type="hidden" name="redirect_to" value="manual_entry">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Schedule ID (Optional Manual Primary Key)</label>
+            <input type="number" name="schedule_id" class="form-control" placeholder="Leave empty for AUTOINCREMENT">
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Flight Number (Foreign Key) <span class="text-danger">*</span></label>
+              <input type="text" name="flight_no_manual" id="schedFlightManual" class="form-control mb-1" placeholder="Type manual Flight No (e.g. AI-101)" required>
+              <select class="form-select form-select-sm" onchange="if(this.value) document.getElementById('schedFlightManual').value=this.value;">
+                <option value="">Or pick existing flight...</option>
+                {% for f in flights %}
+                <option value="{{ f.Flight_No }}">{{ f.Flight_No }} ({{ f.Source }} → {{ f.Destination }})</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Aircraft ID (Foreign Key) <span class="text-danger">*</span></label>
+              <input type="number" name="aircraft_id_manual" id="schedAircraftManual" class="form-control mb-1" placeholder="Type manual Aircraft ID (e.g. 1)" required>
+              <select class="form-select form-select-sm" onchange="if(this.value) document.getElementById('schedAircraftManual').value=this.value;">
+                <option value="">Or pick existing aircraft...</option>
+                {% for a in aircraft %}
+                <option value="{{ a.Aircraft_ID }}">ID #{{ a.Aircraft_ID }}: {{ a.Registration_No }} ({{ a.Model }})</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Flight Date <span class="text-danger">*</span></label>
+            <input type="date" name="date" class="form-control" required>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Departure Time (ISO Datetime) <span class="text-danger">*</span></label>
+              <input type="datetime-local" name="departure_time" class="form-control" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Arrival Time (ISO Datetime) <span class="text-danger">*</span></label>
+              <input type="datetime-local" name="arrival_time" class="form-control" required>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Operational Status</label>
+              <select name="status" class="form-select">
+                <option value="Scheduled">Scheduled</option>
+                <option value="On-Time">On-Time</option>
+                <option value="Delayed">Delayed</option>
+                <option value="Cancelled">Cancelled</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Airport Gate</label>
+              <input type="text" name="gate" class="form-control" placeholder="e.g. A3, T2-G5">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Insert Schedule Tuple</button>
+        </form>
+      </div>
+
+      <!-- 3. AIRCRAFT TAB -->
+      {% elif current_tab == 'aircraft' %}
+      <div class="card-header bg-light"><i class="fas fa-plane text-primary me-2"></i>Manual Input: Aircraft Entity</div>
+      <div class="p-4">
+        <form method="POST" action="{{ url_for('aircraft_add') }}">
+          <input type="hidden" name="redirect_to" value="manual_entry">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Aircraft ID (Optional Manual Primary Key)</label>
+            <input type="number" name="aircraft_id" class="form-control" placeholder="Leave blank for AUTOINCREMENT">
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Registration Number <span class="text-danger">*</span></label>
+              <input type="text" name="registration_no" class="form-control" placeholder="e.g. VT-NEW, VT-XYZ" required>
+              <div class="form-text">Unique tail identifier.</div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Aircraft Model <span class="text-danger">*</span></label>
+              <input type="text" name="model" class="form-control" placeholder="e.g. Boeing 777-300ER, A350" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Total Seating Capacity <span class="text-danger">*</span></label>
+            <input type="number" name="total_capacity" class="form-control" placeholder="e.g. 180" min="1" required>
+          </div>
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label class="form-label fw-semibold">Economy Seats</label>
+              <input type="number" name="economy_seats" class="form-control" value="150" min="0">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label fw-semibold">Business Seats</label>
+              <input type="number" name="business_seats" class="form-control" value="20" min="0">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label fw-semibold">First Class Seats</label>
+              <input type="number" name="first_class_seats" class="form-control" value="10" min="0">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Fleet Status</label>
+            <select name="status" class="form-select">
+              <option value="Active">Active</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="Retired">Retired</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Insert Aircraft Tuple</button>
+        </form>
+      </div>
+
+      <!-- 4. PASSENGERS TAB -->
+      {% elif current_tab == 'passengers' %}
+      <div class="card-header bg-light"><i class="fas fa-users text-primary me-2"></i>Manual Input: Passenger Entity (1NF Normalized)</div>
+      <div class="p-4">
+        <form method="POST" action="{{ url_for('passenger_add') }}">
+          <input type="hidden" name="redirect_to" value="manual_entry">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Passenger ID (Optional Manual Primary Key)</label>
+            <input type="number" name="passenger_id" class="form-control" placeholder="Leave blank for AUTOINCREMENT">
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">First Name <span class="text-danger">*</span></label>
+              <input type="text" name="first_name" class="form-control" placeholder="e.g. Aarav" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Last Name <span class="text-danger">*</span></label>
+              <input type="text" name="last_name" class="form-control" placeholder="e.g. Sharma" required>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Email Address</label>
+              <input type="email" name="email" class="form-control" placeholder="e.g. aarav.sharma@example.com">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Passport Number</label>
+              <input type="text" name="passport_no" class="form-control" placeholder="e.g. K1234567">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label class="form-label fw-semibold">Date of Birth</label>
+              <input type="date" name="dob" class="form-control">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label fw-semibold">Gender</label>
+              <select name="gender" class="form-select">
+                <option value="">— Select —</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label fw-semibold">Address</label>
+              <input type="text" name="address" class="form-control" placeholder="City / Address">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-7 mb-3">
+              <label class="form-label fw-semibold">Primary Contact Phone</label>
+              <input type="text" name="single_phone_number" class="form-control" placeholder="e.g. 9876543210">
+            </div>
+            <div class="col-md-5 mb-3">
+              <label class="form-label fw-semibold">Phone Type</label>
+              <select name="single_phone_type" class="form-select">
+                <option value="Mobile">Mobile</option>
+                <option value="Home">Home</option>
+                <option value="Work">Work</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Insert Passenger Tuple</button>
+        </form>
+      </div>
+
+      <!-- 5. BOOKINGS TAB -->
+      {% elif current_tab == 'bookings' %}
+      <div class="card-header bg-light"><i class="fas fa-ticket-alt text-primary me-2"></i>Manual Input: Booking Reservation Entity</div>
+      <div class="p-4">
+        <form method="POST" action="{{ url_for('booking_add') }}">
+          <input type="hidden" name="redirect_to" value="manual_entry">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Booking ID (Optional Manual Primary Key)</label>
+            <input type="number" name="booking_id" class="form-control" placeholder="Leave blank for AUTOINCREMENT">
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Passenger ID (Foreign Key) <span class="text-danger">*</span></label>
+              <input type="number" name="passenger_id_manual" id="bookingPaxManual" class="form-control mb-1" placeholder="Type manual Passenger ID" required>
+              <select class="form-select form-select-sm" onchange="if(this.value) document.getElementById('bookingPaxManual').value=this.value;">
+                <option value="">Or select passenger...</option>
+                {% for p in passengers %}
+                <option value="{{ p.Passenger_ID }}">#{{ p.Passenger_ID }}: {{ p.First_Name }} {{ p.Last_Name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Schedule ID (Foreign Key) <span class="text-danger">*</span></label>
+              <input type="number" name="schedule_id_manual" id="bookingSchedManual" class="form-control mb-1" placeholder="Type manual Schedule ID" required>
+              <select class="form-select form-select-sm" onchange="if(this.value) document.getElementById('bookingSchedManual').value=this.value;">
+                <option value="">Or select flight schedule...</option>
+                {% for s in schedules %}
+                <option value="{{ s.Schedule_ID }}">#{{ s.Schedule_ID }}: {{ s.Flight_No }} ({{ s.Source }}→{{ s.Destination }}) {{ s.Date }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label class="form-label fw-semibold">Seat Number <span class="text-danger">*</span></label>
+              <input type="text" name="seat_no" class="form-control" placeholder="e.g. 10A, 1B" required>
+              <div class="form-text">Trigger will prevent duplicates!</div>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label fw-semibold">Cabin Class</label>
+              <select name="class" class="form-select">
+                <option value="Economy">Economy</option>
+                <option value="Business">Business</option>
+                <option value="First">First Class</option>
+              </select>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label fw-semibold">Ticket Fare (₹) <span class="text-danger">*</span></label>
+              <input type="number" step="0.01" name="fare" class="form-control" value="5000.00" min="0" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Booking Status</label>
+            <select name="booking_status" class="form-select">
+              <option value="Confirmed">Confirmed</option>
+              <option value="Checked-In">Checked-In</option>
+              <option value="Completed">Completed</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Insert Booking Tuple</button>
+        </form>
+      </div>
+
+      <!-- 6. BAGGAGE TAB -->
+      {% elif current_tab == 'baggage' %}
+      <div class="card-header bg-light"><i class="fas fa-suitcase-rolling text-primary me-2"></i>Manual Input: Baggage Weak Entity</div>
+      <div class="p-4">
+        <form method="POST" action="{{ url_for('baggage_add_standalone') }}">
+          <input type="hidden" name="redirect_to" value="manual_entry">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Booking ID (Foreign Key Owner) <span class="text-danger">*</span></label>
+            <input type="number" name="booking_id_manual" id="baggageBookingManual" class="form-control mb-1" placeholder="Type manual Booking ID (e.g. 1)" required>
+            <select class="form-select form-select-sm" onchange="if(this.value) document.getElementById('baggageBookingManual').value=this.value;">
+              <option value="">Or select from recent bookings...</option>
+              {% for b in bookings %}
+              <option value="{{ b.Booking_ID }}">Booking #{{ b.Booking_ID }}: {{ b.Passenger }} ({{ b.Flight_No }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Tag Number (Barcode/RFID) <span class="text-danger">*</span></label>
+              <input type="text" name="tag_no" class="form-control" placeholder="e.g. BG-TAG-101" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Weight in KG <span class="text-danger">*</span></label>
+              <input type="number" step="0.1" name="weight" class="form-control" placeholder="e.g. 19.5" min="0.1" required>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Baggage Type</label>
+              <select name="type" class="form-select">
+                <option value="Checked">Checked</option>
+                <option value="Cabin">Cabin</option>
+                <option value="Special">Special</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Sequence Number (Composite PK Component)</label>
+              <input type="number" name="baggage_seq_no" class="form-control" placeholder="Auto-calculated if blank">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Insert Baggage Tuple</button>
+        </form>
+      </div>
+
+      <!-- 7. CREW TAB -->
+      {% elif current_tab == 'crew' %}
+      <div class="card-header bg-light"><i class="fas fa-user-tie text-primary me-2"></i>Manual Input: Crew Member Entity</div>
+      <div class="p-4">
+        <form method="POST" action="{{ url_for('crew_add') }}">
+          <input type="hidden" name="redirect_to" value="manual_entry">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Crew ID (Optional Manual Primary Key)</label>
+            <input type="number" name="crew_id" class="form-control" placeholder="Leave blank for AUTOINCREMENT">
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">First Name <span class="text-danger">*</span></label>
+              <input type="text" name="first_name" class="form-control" placeholder="e.g. Vikram" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Last Name <span class="text-danger">*</span></label>
+              <input type="text" name="last_name" class="form-control" placeholder="e.g. Batra" required>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Role / Title <span class="text-danger">*</span></label>
+              <select name="role" class="form-select" required>
+                <option value="Captain">Captain</option>
+                <option value="First Officer">First Officer</option>
+                <option value="Flight Engineer">Flight Engineer</option>
+                <option value="Cabin Crew Lead">Cabin Crew Lead</option>
+                <option value="Cabin Crew">Cabin Crew</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">License Number</label>
+              <input type="text" name="license_no" class="form-control" placeholder="e.g. CPL-9001">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Phone Number</label>
+              <input type="text" name="phone" class="form-control" placeholder="e.g. 9811122233">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Email</label>
+              <input type="email" name="email" class="form-control" placeholder="e.g. pilot@airline.com">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Status</label>
+            <select name="status" class="form-select">
+              <option value="Active">Active</option>
+              <option value="On Leave">On Leave</option>
+              <option value="Retired">Retired</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Insert Crew Tuple</button>
+        </form>
+      </div>
+
+      <!-- 8. ASSIGNMENTS TAB -->
+      {% elif current_tab == 'assignments' %}
+      <div class="card-header bg-light"><i class="fas fa-clipboard-list text-primary me-2"></i>Manual Input: Crew Assignment Entity</div>
+      <div class="p-4">
+        <form method="POST" action="{{ url_for('assignment_add') }}">
+          <input type="hidden" name="redirect_to" value="manual_entry">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Assignment ID (Optional Manual Primary Key)</label>
+            <input type="number" name="assignment_id" class="form-control" placeholder="Leave blank for AUTOINCREMENT">
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Crew Member ID (Foreign Key) <span class="text-danger">*</span></label>
+              <input type="number" name="crew_id_manual" id="assignCrewManual" class="form-control mb-1" placeholder="Type manual Crew ID" required>
+              <select class="form-select form-select-sm" onchange="if(this.value) document.getElementById('assignCrewManual').value=this.value;">
+                <option value="">Or select crew...</option>
+                {% for c in crew %}
+                <option value="{{ c.Crew_ID }}">#{{ c.Crew_ID }}: {{ c.First_Name }} {{ c.Last_Name }} ({{ c.Role }})</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Schedule ID (Foreign Key) <span class="text-danger">*</span></label>
+              <input type="number" name="schedule_id_manual" id="assignSchedManual" class="form-control mb-1" placeholder="Type manual Schedule ID" required>
+              <select class="form-select form-select-sm" onchange="if(this.value) document.getElementById('assignSchedManual').value=this.value;">
+                <option value="">Or select schedule...</option>
+                {% for s in schedules %}
+                <option value="{{ s.Schedule_ID }}">#{{ s.Schedule_ID }}: {{ s.Flight_No }} ({{ s.Date }})</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="alert alert-light border small">
+            <i class="fas fa-shield-alt text-primary me-1"></i> System automatically enforces crew schedule overlap checks.
+          </div>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Insert Assignment Tuple</button>
+        </form>
+      </div>
+
+      <!-- 9. RAW SQL TAB -->
+      {% elif current_tab == 'sql' %}
+      <div class="card-header bg-dark text-white"><i class="fas fa-terminal me-2"></i>Direct SQL Query &amp; Manual DDL/DML Console</div>
+      <div class="p-4">
+        <form method="POST" action="{{ url_for('manual_entry_sql') }}">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">SQL Query / Manual Statements</label>
+            <textarea name="sql_query" class="form-control font-monospace" rows="8" placeholder="e.g. INSERT INTO Flight (Flight_No, Airline, Source, Destination) VALUES ('QP-909', 'Akasa', 'DEL', 'BOM');" required></textarea>
+            <div class="form-text">Supports multiple statements separated by semicolon (;). You can run INSERT, UPDATE, DELETE, or SELECT.</div>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-dark"><i class="fas fa-play me-1"></i> Execute Query</button>
+            <button type="button" class="btn btn-outline-secondary" onclick="document.querySelector('[name=sql_query]').value='SELECT * FROM Available_Seats LIMIT 5;';">Sample Query</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- 10. BULK JSON TAB -->
+      {% elif current_tab == 'bulk' %}
+      <div class="card-header bg-info-subtle"><i class="fas fa-cubes me-2 text-primary"></i>Bulk JSON Array Data Import</div>
+      <div class="p-4">
+        <form method="POST" action="{{ url_for('manual_entry_bulk_json') }}">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Target Table</label>
+            <select name="table_name" class="form-select" required>
+              <option value="Flight">Flight</option>
+              <option value="Flight_Schedule">Flight_Schedule</option>
+              <option value="Aircraft">Aircraft</option>
+              <option value="Passenger">Passenger</option>
+              <option value="Booking">Booking</option>
+              <option value="Baggage">Baggage</option>
+              <option value="Crew">Crew</option>
+              <option value="Crew_Assignment">Crew_Assignment</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">JSON Content (Single Object or Array)</label>
+            <textarea name="json_content" class="form-control font-monospace" rows="8" placeholder='[
+  {"Flight_No": "TEST-1", "Airline": "Test Air", "Source": "DEL", "Destination": "BOM"},
+  {"Flight_No": "TEST-2", "Airline": "Test Air", "Source": "BOM", "Destination": "BLR"}
+]' required></textarea>
+          </div>
+          <button type="submit" class="btn btn-info text-dark"><i class="fas fa-upload me-1"></i> Import JSON Records</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Schema & Constraint Guide Sidebar -->
+  <div class="col-lg-4">
+    <div class="table-card p-3 mb-4">
+      <h6 class="fw-bold mb-3"><i class="fas fa-info-circle text-primary me-2"></i>Schema Rules: {{ current_tab|upper }}</h6>
+      {% if current_tab == 'flights' %}
+      <ul class="small text-muted ps-3 mb-0">
+        <li><strong>Primary Key:</strong> <code>Flight_No</code> (TEXT)</li>
+        <li><strong>Columns:</strong> Airline, Source, Destination</li>
+        <li><strong>Check Constraint:</strong> <code>Source != Destination</code></li>
+      </ul>
+      {% elif current_tab == 'schedules' %}
+      <ul class="small text-muted ps-3 mb-0">
+        <li><strong>Primary Key:</strong> <code>Schedule_ID</code> (INTEGER)</li>
+        <li><strong>Foreign Keys:</strong> <code>Flight_No</code>, <code>Aircraft_ID</code></li>
+        <li><strong>Constraint:</strong> <code>UNIQUE(Aircraft_ID, Date, Departure_Time)</code></li>
+      </ul>
+      {% elif current_tab == 'aircraft' %}
+      <ul class="small text-muted ps-3 mb-0">
+        <li><strong>Primary Key:</strong> <code>Aircraft_ID</code> (INTEGER)</li>
+        <li><strong>Unique:</strong> <code>Registration_No</code></li>
+        <li><strong>Check:</strong> <code>Total_Capacity &gt; 0</code></li>
+      </ul>
+      {% elif current_tab == 'passengers' %}
+      <ul class="small text-muted ps-3 mb-0">
+        <li><strong>Primary Key:</strong> <code>Passenger_ID</code> (INTEGER)</li>
+        <li><strong>Unique:</strong> <code>Email</code>, <code>Passport_No</code></li>
+        <li><strong>1NF:</strong> Phone stored in <code>Passenger_Phone</code></li>
+      </ul>
+      {% elif current_tab == 'bookings' %}
+      <ul class="small text-muted ps-3 mb-0">
+        <li><strong>Primary Key:</strong> <code>Booking_ID</code> (INTEGER)</li>
+        <li><strong>Foreign Keys:</strong> <code>Passenger_ID</code>, <code>Schedule_ID</code></li>
+        <li><strong>Triggers:</strong> Double-booking prevention &amp; audit trail</li>
+      </ul>
+      {% elif current_tab == 'baggage' %}
+      <ul class="small text-muted ps-3 mb-0">
+        <li><strong>Weak Entity:</strong> Cannot exist without Booking</li>
+        <li><strong>Composite PK:</strong> <code>(Booking_ID, Baggage_Seq_No)</code></li>
+        <li><strong>Excess Flag:</strong> Weighing over 23kg is flagged</li>
+      </ul>
+      {% elif current_tab == 'crew' %}
+      <ul class="small text-muted ps-3 mb-0">
+        <li><strong>Primary Key:</strong> <code>Crew_ID</code> (INTEGER)</li>
+        <li><strong>Unique:</strong> <code>License_No</code>, <code>Email</code></li>
+        <li><strong>Roles:</strong> Captain, First Officer, Lead, Crew</li>
+      </ul>
+      {% elif current_tab == 'assignments' %}
+      <ul class="small text-muted ps-3 mb-0">
+        <li><strong>Junction Entity:</strong> Resolves Crew &harr; Schedule M:N</li>
+        <li><strong>Constraint:</strong> <code>UNIQUE(Crew_ID, Schedule_ID)</code></li>
+        <li><strong>Validation:</strong> Overlapping flight times blocked</li>
+      </ul>
+      {% else %}
+      <p class="small text-muted mb-0">Direct SQL and bulk JSON execution operates with strict foreign key constraints under MySQL InnoDB.</p>
+      {% endif %}
+    </div>
+
+    <!-- Quick Links -->
+    <div class="table-card p-3">
+      <h6 class="fw-bold mb-2"><i class="fas fa-external-link-alt text-primary me-2"></i>Category Navigation</h6>
+      <div class="d-grid gap-2">
+        <a href="{{ url_for('flights') }}" class="btn btn-outline-secondary btn-sm text-start"><i class="fas fa-route me-2"></i> View Flights Table</a>
+        <a href="{{ url_for('schedules') }}" class="btn btn-outline-secondary btn-sm text-start"><i class="fas fa-calendar-alt me-2"></i> View Flight Schedules</a>
+        <a href="{{ url_for('aircraft_list') }}" class="btn btn-outline-secondary btn-sm text-start"><i class="fas fa-plane me-2"></i> View Aircraft Fleet</a>
+        <a href="{{ url_for('passengers') }}" class="btn btn-outline-secondary btn-sm text-start"><i class="fas fa-users me-2"></i> View Passengers Directory</a>
+        <a href="{{ url_for('bookings') }}" class="btn btn-outline-secondary btn-sm text-start"><i class="fas fa-ticket-alt me-2"></i> View Reservations</a>
+        <a href="{{ url_for('baggage_list') }}" class="btn btn-outline-secondary btn-sm text-start"><i class="fas fa-suitcase-rolling me-2"></i> View Baggage Records</a>
+        <a href="{{ url_for('crew_list') }}" class="btn btn-outline-secondary btn-sm text-start"><i class="fas fa-user-tie me-2"></i> View Crew Roster</a>
+        <a href="{{ url_for('assignments') }}" class="btn btn-outline-secondary btn-sm text-start"><i class="fas fa-clipboard-list me-2"></i> View Crew Assignments</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}Analytics &amp; Operational Reports — SkyReserve{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">Reports</li>{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="fw-bold mb-0"><i class="fas fa-chart-pie me-2 text-primary"></i>Analytics &amp; Operations Reports</h4>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
+  <!-- Status Distribution -->
+  <div class="col-lg-6">
+    <div class="table-card p-3 h-100">
+      <h6 class="fw-bold mb-3"><i class="fas fa-chart-donut me-2 text-primary"></i>Booking Status Breakdown</h6>
+      <div style="height: 240px; position: relative;">
+        <canvas id="statusChart"></canvas>
+      </div>
+      <div class="d-flex justify-content-around mt-3 flex-wrap text-center">
+        {% for s in status_counts %}
+        <div class="p-1">
+          <small class="text-muted d-block">{{ s.Booking_Status }}</small>
+          <strong>{{ s.cnt }}</strong>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Travel Class Breakdown -->
+  <div class="col-lg-6">
+    <div class="table-card p-3 h-100">
+      <h6 class="fw-bold mb-3"><i class="fas fa-chair me-2 text-primary"></i>Active Bookings by Travel Class</h6>
+      <div style="height: 240px; position: relative;">
+        <canvas id="classChart"></canvas>
+      </div>
+      <div class="d-flex justify-content-around mt-3 flex-wrap text-center">
+        {% for c in class_counts %}
+        <div class="p-1">
+          <small class="text-muted d-block">{{ c.Class }}</small>
+          <strong>{{ c.cnt }}</strong>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Revenue by Flight -->
+<div class="table-card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="fas fa-coins me-2 text-warning"></i>Gross Revenue by Flight Route</span>
+    <span class="badge bg-success-subtle text-success border">Active Confirmed Bookings</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>Flight No</th>
+          <th>Route</th>
+          <th>Bookings</th>
+          <th>Total Revenue</th>
+          <th>Average Fare / Pax</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in revenue %}
+        <tr>
+          <td><strong>{{ r.Flight_No }}</strong></td>
+          <td><span class="badge bg-light text-dark border">{{ r.Source }} → {{ r.Destination }}</span></td>
+          <td>{{ r.Booking_Count }}</td>
+          <td><strong class="text-success">₹{{ "{:,.2f}".format(r.Total_Revenue or 0) }}</strong></td>
+          <td>
+            {% if r.Booking_Count > 0 %}
+              ₹{{ "{:,.2f}".format((r.Total_Revenue or 0) / r.Booking_Count) }}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="text-center text-muted py-3">No revenue data available</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- System Audit Logs -->
+<div class="table-card">
+  <div class="card-header"><i class="fas fa-shield-alt me-2 text-primary"></i>Data Audit Trail (Booking Modifications &amp; Cancellations)</div>
+  <div class="table-responsive">
+    <table class="table table-sm table-hover">
+      <thead>
+        <tr>
+          <th>Log ID</th>
+          <th>Timestamp</th>
+          <th>Booking</th>
+          <th>Passenger</th>
+          <th>Action</th>
+          <th>User</th>
+          <th>Old State</th>
+          <th>New State</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in audit %}
+        <tr>
+          <td>#{{ a.Audit_ID }}</td>
+          <td><small class="text-muted">{{ a.Changed_At }}</small></td>
+          <td><a href="{{ url_for('booking_detail', bid=a.Booking_ID) }}" class="text-decoration-none">#{{ a.Booking_ID }}</a></td>
+          <td><small>{{ a.Passenger or '—' }}</small></td>
+          <td>
+            <span class="badge {% if a.Action=='CREATED' %}bg-success{% elif a.Action=='CANCELLED' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+              {{ a.Action }}
+            </span>
+          </td>
+          <td><small>{{ a.Changed_By }}</small></td>
+          <td><code class="small">{{ a.Old_Values or '—' }}</code></td>
+          <td><code class="small">{{ a.New_Values or '—' }}</code></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="text-center text-muted py-3">No audit records found</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Status Chart
+const statusLabels = [{% for s in status_counts %}'{{ s.Booking_Status }}',{% endfor %}];
+const statusData = [{% for s in status_counts %}{{ s.cnt }},{% endfor %}];
+if (statusLabels.length > 0) {
+  new Chart(document.getElementById('statusChart'), {
+    type: 'doughnut',
+    data: {
+      labels: statusLabels,
+      datasets: [{
+        data: statusData,
+        backgroundColor: ['#10b981', '#3b82f6', '#ef4444', '#6366f1', '#f59e0b']
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } }
+    }
+  });
+}
+
+// Class Chart
+const classLabels = [{% for c in class_counts %}'{{ c.Class }}',{% endfor %}];
+const classData = [{% for c in class_counts %}{{ c.cnt }},{% endfor %}];
+if (classLabels.length > 0) {
+  new Chart(document.getElementById('classChart'), {
+    type: 'doughnut',
+    data: {
+      labels: classLabels,
+      datasets: [{
+        data: classData,
+        backgroundColor: ['#2563eb', '#8b5cf6', '#f59e0b']
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } }
+    }
+  });
+}
+</script>
+{% endblock %}

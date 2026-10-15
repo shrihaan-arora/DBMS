@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Assign Crew Member — SkyReserve{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('assignments') }}" class="text-decoration-none">Assignments</a></li>
+<li class="breadcrumb-item active">New Assignment</li>
+{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="table-card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-clipboard-check me-2 text-primary"></i>Assign Crew to Flight Schedule</span>
+        <span class="badge bg-warning-subtle text-warning-emphasis border">Supports Manual Input</span>
+      </div>
+      <div class="p-4">
+        <form method="POST" action="{{ url_for('assignment_add') }}">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Assignment ID (Optional Manual Primary Key)</label>
+            <input type="number" name="assignment_id" class="form-control" placeholder="Leave empty for AUTOINCREMENT">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Crew Member (Select or Type Manually) <span class="text-danger">*</span></label>
+            <input type="number" name="crew_id_manual" id="crewIdInput" class="form-control mb-1" placeholder="Type Crew ID manually (e.g. 1)" required>
+            <select name="crew_id" class="form-select form-select-sm" onchange="if(this.value) document.getElementById('crewIdInput').value=this.value;">
+              <option value="">— Or select active crew member —</option>
+              {% for c in crew %}
+              <option value="{{ c.Crew_ID }}">
+                ID #{{ c.Crew_ID }}: {{ c.First_Name }} {{ c.Last_Name }} ({{ c.Role }})
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Flight Schedule (Select or Type Manually) <span class="text-danger">*</span></label>
+            <input type="number" name="schedule_id_manual" id="schedIdInput" class="form-control mb-1" placeholder="Type Schedule ID manually (e.g. 1)" required>
+            <select name="schedule_id" class="form-select form-select-sm" onchange="if(this.value) document.getElementById('schedIdInput').value=this.value;">
+              <option value="">— Or select flight schedule —</option>
+              {% for s in schedules %}
+              <option value="{{ s.Schedule_ID }}">
+                ID #{{ s.Schedule_ID }}: {{ s.Flight_No }} ({{ s.Source }} → {{ s.Destination }}) | {{ s.Date }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="alert alert-light border mb-4">
+            <small class="text-muted">
+              <i class="fas fa-shield-alt text-primary me-1"></i>
+              <strong>Overlap Prevention (FR14):</strong> The system verifies that the selected crew member is not already scheduled on another overlapping flight during this time window.
+            </small>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-check me-1"></i> Confirm Assignment</button>
+            <a href="{{ url_for('assignments') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

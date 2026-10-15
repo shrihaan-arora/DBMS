@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}New Booking — SkyReserve{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('bookings') }}" class="text-decoration-none">Bookings</a></li>
+<li class="breadcrumb-item active">New Booking</li>
+{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="table-card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-plus-circle me-2 text-primary"></i>Create Flight Reservation (Manual / Guided)</span>
+        <span class="badge bg-primary-subtle text-primary border" id="seatAvailabilityBadge" style="display:none;"></span>
+      </div>
+      <div class="p-4">
+        <form method="POST" action="{{ url_for('booking_add') }}" id="bookingForm">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Booking ID (Optional Manual Primary Key)</label>
+            <input type="number" name="booking_id" class="form-control" placeholder="Leave empty for AUTOINCREMENT">
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Passenger <span class="text-danger">*</span></label>
+              <input type="number" name="passenger_id_manual" id="passengerIdInput" class="form-control mb-1" placeholder="Type Passenger ID manually (e.g. 1)" required>
+              <select name="passenger_id" class="form-select form-select-sm" onchange="if(this.value) document.getElementById('passengerIdInput').value=this.value;">
+                <option value="">— Or select registered passenger —</option>
+                {% for p in passengers %}
+                <option value="{{ p.Passenger_ID }}">{{ p.First_Name }} {{ p.Last_Name }} (ID: #{{ p.Passenger_ID }})</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Flight Schedule <span class="text-danger">*</span></label>
+              <input type="number" name="schedule_id_manual" id="scheduleIdInput" class="form-control mb-1" placeholder="Type Schedule ID manually (e.g. 1)" required onchange="fetchSeatInfo(this.value)">
+              <select name="schedule_id" id="scheduleSelect" class="form-select form-select-sm" onchange="if(this.value){ document.getElementById('scheduleIdInput').value=this.value; fetchSeatInfo(this.value); }">
+                <option value="">— Or select from upcoming schedule —</option>
+                {% for s in schedules %}
+                <option value="{{ s.Schedule_ID }}" data-seats="{{ s.Seats_Available }}" data-total="{{ s.Total_Capacity }}">
+                  #{{ s.Schedule_ID }}: {{ s.Flight_No }} ({{ s.Source }} → {{ s.Destination }}) | {{ s.Date }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <!-- Dynamic Schedule Info Card -->
+          <div id="scheduleInfoBox" class="alert alert-info py-2 px-3 mb-3" style="display:none; border-radius:8px;">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <div>
+                <strong><i class="fas fa-plane-departure me-1"></i> <span id="infoFlight"></span></strong>:
+                <span id="infoRoute"></span> | Date: <span id="infoDate"></span>
+              </div>
+              <div>
+                Available Capacity: <strong id="infoSeats" class="text-success"></strong> / <span id="infoTotal"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label class="form-label fw-semibold">Travel Class</label>
+              <select name="class" id="classSelect" class="form-select" required>
+                <option value="Economy">Economy</option>
+                <option value="Business">Business</option>
+                <option value="First">First Class</option>
+              </select>
+            </div>
+
+            <div class="col-md-4 mb-3">
+              <label class="form-label fw-semibold">Seat Number <span class="text-danger">*</span></label>
+              <input type="text" name="seat_no" id="seatNo" class="form-control" placeholder="e.g. 12A, 3F" required>
+              <div class="form-text">Checked against active bookings in real-time.</div>
+            </div>
+
+            <div class="col-md-4 mb-3">
+              <label class="form-label fw-semibold">Fare (₹) <span class="text-danger">*</span></label>
+              <input type="number" step="0.01" name="fare" id="fareInput" class="form-control" value="5000.00" min="0" required>
+            </div>
+          </div>
+
+          <div class="alert alert-light border d-flex align-items-center gap-2 mb-3">
+            <i class="fas fa-info-circle text-primary fs-5"></i>
+            <small class="text-muted">
+              Seat allocations are transactionally verified against active reservations. In case of duplicate seat numbers on the same flight schedule, the database trigger will reject the collision.
+            </small>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-check-circle me-1"></i> Confirm Reservation</button>
+            <a href="{{ url_for('bookings') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function fetchSeatInfo(scheduleId) {
+  const box = document.getElementById('scheduleInfoBox');
+  const badge = document.getElementById('seatAvailabilityBadge');
+  if (!scheduleId) {
+    box.style.display = 'none';
+    badge.style.display = 'none';
+    return;
+  }
+  try {
+    const res = await fetch(`/api/available_seats/${scheduleId}`);
+    if (!res.ok) throw new Error('Network error');
+    const data = await res.json();
+    document.getElementById('infoFlight').textContent = data.Flight_No;
+    document.getElementById('infoRoute').textContent = `${data.Source} → ${data.Destination}`;
+    document.getElementById('infoDate').textContent = data.Date;
+    document.getElementById('infoSeats').textContent = data.Seats_Available;
+    document.getElementById('infoTotal').textContent = data.Total_Capacity;
+    box.style.display = 'block';
+
+    badge.style.display = 'inline-block';
+    badge.textContent = `${data.Seats_Available} Seats Available`;
+    if (data.Seats_Available <= 5) {
+      badge.className = 'badge bg-danger-subtle text-danger border';
+    } else {
+      badge.className = 'badge bg-success-subtle text-success border';
+    }
+  } catch (err) {
+    console.error('Error fetching seat info:', err);
+  }
+}
+</script>
+{% endblock %}

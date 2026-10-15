@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}{{ crew_member.First_Name }} {{ crew_member.Last_Name }} — SkyReserve{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('crew_list') }}" class="text-decoration-none">Crew</a></li>
+<li class="breadcrumb-item active">{{ crew_member.First_Name }} {{ crew_member.Last_Name }}</li>
+{% endblock %}
+{% block content %}
+<div class="row g-4">
+  <!-- Crew Profile Card -->
+  <div class="col-lg-4">
+    <div class="stat-card text-center">
+      <div class="icon mx-auto mb-3" style="background:#ccfbf1;color:#0d9488;width:64px;height:64px;font-size:1.5rem">
+        <i class="fas fa-user-tie"></i>
+      </div>
+      <h5 class="fw-bold mb-1">{{ crew_member.First_Name }} {{ crew_member.Last_Name }}</h5>
+      {% set rl = crew_member.Role|lower|replace(' ', '-') %}
+      <span class="badge badge-{{ rl }} rounded-pill px-3 py-1 mb-2">{{ crew_member.Role }}</span>
+      <div>
+        {% set st = crew_member.Status|lower|replace(' ', '-') %}
+        <span class="badge badge-{{ st }} rounded-pill px-2">{{ crew_member.Status }}</span>
+      </div>
+      <hr>
+      <div class="text-start">
+        <p class="small mb-2"><i class="fas fa-id-badge me-2 text-muted"></i>License: <code>{{ crew_member.License_No or 'N/A' }}</code></p>
+        <p class="small mb-2"><i class="fas fa-phone me-2 text-muted"></i>Phone: {{ crew_member.Phone or 'N/A' }}</p>
+        <p class="small mb-2"><i class="fas fa-envelope me-2 text-muted"></i>Email: {{ crew_member.Email or 'N/A' }}</p>
+      </div>
+      <hr>
+      <div class="d-flex gap-2 justify-content-center">
+        <a href="{{ url_for('crew_edit', cid=crew_member.Crew_ID) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit me-1"></i> Edit Profile</a>
+        <form method="POST" action="{{ url_for('crew_delete', cid=crew_member.Crew_ID) }}" onsubmit="return confirmAction('Delete this crew member?')">
+          <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash me-1"></i> Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flight Assignments -->
+  <div class="col-lg-8">
+    <div class="table-card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-clipboard-list me-2 text-primary"></i>Assigned Flight Schedules ({{ assignments|length }})</span>
+        <a href="{{ url_for('assignment_add') }}" class="btn btn-sm btn-primary">
+          <i class="fas fa-plus me-1"></i> Assign to Flight
+        </a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Flight No</th>
+              <th>Route</th>
+              <th>Date</th>
+              <th>Departure</th>
+              <th>Arrival</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in assignments %}
+            <tr>
+              <td><strong>{{ a.Flight_No }}</strong></td>
+              <td><span class="badge bg-light text-dark border">{{ a.Source }} → {{ a.Destination }}</span></td>
+              <td>{{ a.Date }}</td>
+              <td>{{ a.Departure_Time[11:16] if a.Departure_Time|length > 11 else a.Departure_Time }}</td>
+              <td>{{ a.Arrival_Time[11:16] if a.Arrival_Time|length > 11 else a.Arrival_Time }}</td>
+              <td>
+                <form method="POST" action="{{ url_for('assignment_delete', aid=a.Assignment_ID) }}" onsubmit="return confirmAction('Remove this flight assignment?')">
+                  <button class="btn btn-sm btn-outline-danger"><i class="fas fa-times me-1"></i> Unassign</button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-center text-muted py-4">No flight schedules assigned to this crew member</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

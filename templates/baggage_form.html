@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Add Baggage — Booking #{{ booking.Booking_ID }} — SkyReserve{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('bookings') }}" class="text-decoration-none">Bookings</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('booking_detail', bid=booking.Booking_ID) }}" class="text-decoration-none">#{{ booking.Booking_ID }}</a></li>
+<li class="breadcrumb-item active">Add Baggage</li>
+{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="table-card">
+      <div class="card-header"><i class="fas fa-suitcase-rolling me-2 text-primary"></i>Register Baggage Item</div>
+      <div class="p-4">
+        <div class="alert alert-light border mb-3">
+          <strong>Associated Reservation:</strong> Booking #{{ booking.Booking_ID }} | Class: <strong>{{ booking.Class }}</strong>
+          <br>
+          <small class="text-muted">Baggage is modeled as a weak entity dependent on the booking key.</small>
+        </div>
+        <form method="POST" action="{{ url_for('baggage_add', bid=booking.Booking_ID) }}">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Baggage Tag Number</label>
+            <input type="text" name="tag_no" class="form-control" placeholder="e.g. BG-{{ booking.Booking_ID }}-001" required>
+            <div class="form-text">Must be a unique RFID/barcode identifier.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Weight (kg)</label>
+            <input type="number" step="0.1" name="weight" class="form-control" min="0.1" max="100.0" placeholder="e.g. 18.5" required>
+            <div class="form-text">Standard checked baggage allowance is usually 15-23 kg. Items above 23 kg are flagged for excess weight.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Baggage Type</label>
+            <select name="type" class="form-select">
+              <option value="Checked">Checked Baggage</option>
+              <option value="Cabin">Cabin / Carry-on</option>
+              <option value="Special">Special / Fragile / Sports Equipment</option>
+            </select>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-plus me-1"></i> Add Baggage</button>
+            <a href="{{ url_for('booking_detail', bid=booking.Booking_ID) }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

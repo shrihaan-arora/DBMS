@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}{{ passenger.First_Name }} {{ passenger.Last_Name }} — SkyReserve{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('passengers') }}" class="text-decoration-none">Passengers</a></li>
+<li class="breadcrumb-item active">{{ passenger.First_Name }} {{ passenger.Last_Name }}</li>
+{% endblock %}
+{% block content %}
+<div class="row g-4">
+  <!-- Profile Card -->
+  <div class="col-lg-4">
+    <div class="stat-card text-center">
+      <div class="icon mx-auto mb-3" style="background:#ede9fe;color:#7c3aed;width:64px;height:64px;font-size:1.5rem">
+        <i class="fas fa-user"></i>
+      </div>
+      <h5 class="fw-bold">{{ passenger.First_Name }} {{ passenger.Last_Name }}</h5>
+      <p class="text-muted small mb-2">Passenger ID: {{ passenger.Passenger_ID }}</p>
+      {% if passenger.Gender %}<span class="badge bg-light text-dark border me-1">{{ passenger.Gender }}</span>{% endif %}
+      <hr>
+      <div class="text-start">
+        <p class="small mb-1"><i class="fas fa-envelope me-2 text-muted"></i>{{ passenger.Email or '—' }}</p>
+        <p class="small mb-1"><i class="fas fa-passport me-2 text-muted"></i>{{ passenger.Passport_No or '—' }}</p>
+        <p class="small mb-1"><i class="fas fa-birthday-cake me-2 text-muted"></i>{{ passenger.Date_of_Birth or '—' }}</p>
+        <p class="small mb-1"><i class="fas fa-map-marker-alt me-2 text-muted"></i>{{ passenger.Address or '—' }}</p>
+      </div>
+      <hr>
+      <p class="small fw-semibold mb-2"><i class="fas fa-phone me-1"></i> Phone Numbers</p>
+      {% for ph in phones %}
+      <div class="small mb-1"><span class="badge bg-light text-dark border">{{ ph.Phone_Type }}</span> {{ ph.Phone_Number }}</div>
+      {% else %}
+      <div class="small text-muted">No phone numbers</div>
+      {% endfor %}
+      <hr>
+      <div class="d-flex gap-2 justify-content-center">
+        <a href="{{ url_for('passenger_edit', pid=passenger.Passenger_ID) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit me-1"></i>Edit</a>
+        <form method="POST" action="{{ url_for('passenger_delete', pid=passenger.Passenger_ID) }}" onsubmit="return confirmAction('Delete this passenger?')">
+          <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash me-1"></i>Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bookings -->
+  <div class="col-lg-8">
+    <div class="table-card">
+      <div class="card-header"><i class="fas fa-ticket-alt me-2"></i>Booking History ({{ bookings|length }})</div>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead><tr><th>ID</th><th>Flight</th><th>Route</th><th>Date</th><th>Seat</th><th>Class</th><th>Fare</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for b in bookings %}
+            <tr>
+              <td><a href="{{ url_for('booking_detail', bid=b.Booking_ID) }}" class="text-decoration-none">#{{ b.Booking_ID }}</a></td>
+              <td><strong>{{ b.Flight_No }}</strong></td>
+              <td>{{ b.Source }} → {{ b.Destination }}</td>
+              <td>{{ b.Date }}</td>
+              <td>{{ b.Seat_No or '—' }}</td>
+              <td><span class="badge badge-{{ b.Class|lower }} rounded-pill">{{ b.Class }}</span></td>
+              <td>₹{{ "%.0f"|format(b.Fare) }}</td>
+              <td>
+                {% set st = b.Booking_Status|lower|replace(' ','-') %}
+                <span class="badge badge-{{ st }} rounded-pill">{{ b.Booking_Status }}</span>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8" class="text-center text-muted py-4">No bookings</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

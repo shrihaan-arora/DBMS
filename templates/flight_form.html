@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit Flight' if flight else 'Add Flight' }} — SkyReserve{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('flights') }}" class="text-decoration-none">Flights</a></li>
+<li class="breadcrumb-item active">{{ 'Edit' if flight else 'Add' }}</li>
+{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="table-card">
+      <div class="card-header"><i class="fas fa-{{ 'edit' if flight else 'plus' }} me-2"></i>{{ 'Edit Flight' if flight else 'Add New Flight' }}</div>
+      <div class="p-4">
+        <form method="POST" action="{{ url_for('flight_edit', flight_no=flight.Flight_No) if flight else url_for('flight_add') }}">
+          <div class="mb-3">
+            <label class="form-label">Flight Number</label>
+            <input type="text" name="flight_no" class="form-control" value="{{ flight.Flight_No if flight else '' }}" placeholder="e.g. AI-101" required {{ 'readonly' if flight }}>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Airline</label>
+            <input type="text" name="airline" class="form-control" value="{{ flight.Airline if flight else '' }}" placeholder="e.g. Air India" required>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Source</label>
+              <input type="text" name="source" class="form-control" value="{{ flight.Source if flight else '' }}" placeholder="e.g. DEL" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Destination</label>
+              <input type="text" name="destination" class="form-control" value="{{ flight.Destination if flight else '' }}" placeholder="e.g. BOM" required>
+            </div>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>{{ 'Update' if flight else 'Add Flight' }}</button>
+            <a href="{{ url_for('flights') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,512 @@
+{% extends "base.html" %}
+{% block title %}India Flight Map &amp; Air Network — SkyReserve{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">India Air Network Map</li>
+{% endblock %}
+
+{% block extra_css %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<style>
+  #map-container {
+    height: 700px;
+    width: 100%;
+    border-radius: 12px;
+    background: #0b132b;
+    border: 1px solid #334155;
+    position: relative;
+    z-index: 1;
+  }
+  .map-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  }
+  /* Airport Pulsing Pin */
+  .airport-icon {
+    background: transparent;
+    border: none;
+  }
+  .airport-dot {
+    width: 14px;
+    height: 14px;
+    background: #38bdf8;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #38bdf8;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+  .airport-dot.hub {
+    width: 18px;
+    height: 18px;
+    background: #fbbf24;
+    box-shadow: 0 0 14px #fbbf24;
+  }
+  .airport-dot:hover {
+    transform: scale(1.4);
+  }
+  .airport-label {
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid #475569;
+    border-radius: 4px;
+    color: #f8fafc;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 1px 4px;
+    margin-top: 4px;
+    white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  }
+  /* Leaflet Popups Dark Theme */
+  .leaflet-popup-content-wrapper {
+    background: #0f172a !important;
+    color: #f1f5f9 !important;
+    border: 1px solid #334155 !important;
+    border-radius: 10px !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+  }
+  .leaflet-popup-tip {
+    background: #0f172a !important;
+    border: 1px solid #334155 !important;
+  }
+  .leaflet-popup-content {
+    margin: 12px 14px !important;
+    line-height: 1.4 !important;
+  }
+  .route-info-box {
+    max-height: 520px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #475569 transparent;
+    width: 100%;
+  }
+  .route-info-box::-webkit-scrollbar {
+    width: 6px;
+  }
+  .route-info-box::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 4px;
+  }
+  .route-item {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 0.85rem;
+    margin-bottom: 0.65rem;
+    transition: all 0.15s ease;
+    cursor: pointer;
+    width: 100%;
+    display: block;
+  }
+  .route-item:hover {
+    border-color: #38bdf8;
+    background: rgba(56, 189, 248, 0.08);
+    transform: translateY(-1px);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h4 class="fw-bold mb-1 text-white"><i class="fas fa-map-marked-alt text-info me-2"></i>Interactive India Flight Network Map</h4>
+    <p class="text-muted mb-0 small">Live visualization of Indian air corridors, airport hubs, scheduled routes &amp; real-time available capacity.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('book_flight') }}" class="btn btn-primary btn-sm fw-semibold">
+      <i class="fas fa-ticket-alt me-1"></i> Book a Flight
+    </a>
+    <a href="{{ url_for('schedules') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="fas fa-calendar-alt me-1"></i> Schedules List
+    </a>
+  </div>
+</div>
+
+<!-- Network KPI Summary Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3 col-6">
+    <div class="stat-card d-flex align-items-center gap-3">
+      <div class="icon" style="background:#0f766e;color:#2dd4bf"><i class="fas fa-globe-asia"></i></div>
+      <div>
+        <h3>{{ airports|length }}</h3>
+        <small>Indian Hubs &amp; Airports</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 col-6">
+    <div class="stat-card d-flex align-items-center gap-3">
+      <div class="icon" style="background:#1e40af;color:#60a5fa"><i class="fas fa-route"></i></div>
+      <div>
+        <h3>{{ flights|length }}</h3>
+        <small>Active Flight Schedules</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 col-6">
+    <div class="stat-card d-flex align-items-center gap-3">
+      <div class="icon" style="background:#7e22ce;color:#c084fc"><i class="fas fa-plane-departure"></i></div>
+      <div>
+        <h3>6</h3>
+        <small>Domestic Airlines</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 col-6">
+    <div class="stat-card d-flex align-items-center gap-3">
+      <div class="icon" style="background:#15803d;color:#4ade80"><i class="fas fa-chair"></i></div>
+      <div>
+        <h3 id="totalSeatsAvailCounter">2,100+</h3>
+        <small>Derived Seats Available</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Map & Route Controls Grid -->
+<div class="row g-4 mb-4">
+  <!-- Map View Container (Left 8 Columns) -->
+  <div class="col-xl-8 col-lg-7">
+    <div class="map-card p-3">
+      <!-- Map Toolbar -->
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge bg-primary-subtle text-primary border border-primary border-opacity-25 px-2 py-1">
+            <i class="fas fa-map-marked-alt me-1"></i> Street Map View
+          </span>
+          <span class="text-light small">Center: Indian Subcontinent (22.5° N, 79.5° E)</span>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-secondary btn-sm" onclick="resetMapView()">
+            <i class="fas fa-compress-arrows-alt me-1"></i> Fit India View
+          </button>
+        </div>
+      </div>
+
+      <!-- The Leaflet Map Canvas -->
+      <div id="map-container"></div>
+
+      <!-- Map Legend -->
+      <div class="mt-3 p-2 bg-dark rounded d-flex justify-content-between align-items-center flex-wrap gap-2 border border-secondary border-opacity-25" style="font-size:0.8rem">
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+          <span class="text-light fw-semibold">Carrier Corridors:</span>
+          <span><i class="fas fa-circle" style="color:#ef4444"></i> Air India</span>
+          <span><i class="fas fa-circle" style="color:#3b82f6"></i> IndiGo</span>
+          <span><i class="fas fa-circle" style="color:#f97316"></i> SpiceJet</span>
+          <span><i class="fas fa-circle" style="color:#a855f7"></i> Vistara</span>
+          <span><i class="fas fa-circle" style="color:#eab308"></i> Akasa Air</span>
+          <span><i class="fas fa-circle" style="color:#14b8a6"></i> AIX Connect</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <span><i class="fas fa-circle text-warning"></i> Primary Hub (DEL/BOM/BLR)</span>
+          <span><i class="fas fa-circle text-info"></i> Regional Airport</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar: Filters & Flight Corridors (Right 4 Columns - Fixed Vertical Layout) -->
+  <div class="col-xl-4 col-lg-5">
+    <div class="table-card p-3 h-100 d-flex flex-column" style="background:#1e293b; border: 1px solid #334155; border-radius: 12px;">
+      <!-- Panel Header -->
+      <div class="card-header px-0 pt-0 pb-2 mb-3 d-flex justify-content-between align-items-center border-bottom border-secondary border-opacity-25">
+        <h6 class="fw-bold mb-0 text-white"><i class="fas fa-layer-group text-primary me-2"></i>Flight Network Corridors</h6>
+        <span class="badge bg-info-subtle text-info border border-info border-opacity-25 fw-semibold" id="routeCountBadge">{{ flights|length }} Active</span>
+      </div>
+
+      <!-- Filter Controls Section -->
+      <div class="mb-3">
+        <label class="form-label small fw-bold text-light mb-1">
+          <i class="fas fa-filter text-info me-1"></i> Filter by Airline:
+        </label>
+        <select class="form-select form-select-sm mb-3" id="filterAirlineSelect" onchange="filterMapRoutes()">
+          <option value="ALL">All Domestic Airlines (Show All)</option>
+          <option value="Air India">Air India (AI)</option>
+          <option value="IndiGo">IndiGo (6E)</option>
+          <option value="SpiceJet">SpiceJet (SG)</option>
+          <option value="Vistara">Vistara (UK)</option>
+          <option value="Akasa Air">Akasa Air (QP)</option>
+          <option value="AIX Connect">AIX Connect (I5)</option>
+        </select>
+
+        <label class="form-label small fw-bold text-light mb-1">
+          <i class="fas fa-crosshairs text-warning me-1"></i> Focus Major Hub:
+        </label>
+        <div class="d-flex gap-1 flex-wrap mb-2">
+          <button type="button" class="btn btn-outline-warning btn-sm py-1 px-2 fw-semibold" onclick="focusAirport('DEL')">DEL (Delhi)</button>
+          <button type="button" class="btn btn-outline-warning btn-sm py-1 px-2 fw-semibold" onclick="focusAirport('BOM')">BOM (Mumbai)</button>
+          <button type="button" class="btn btn-outline-warning btn-sm py-1 px-2 fw-semibold" onclick="focusAirport('BLR')">BLR (Bengaluru)</button>
+          <button type="button" class="btn btn-outline-info btn-sm py-1 px-2 fw-semibold" onclick="focusAirport('MAA')">MAA (Chennai)</button>
+          <button type="button" class="btn btn-outline-info btn-sm py-1 px-2 fw-semibold" onclick="focusAirport('CCU')">CCU (Kolkata)</button>
+          <button type="button" class="btn btn-outline-info btn-sm py-1 px-2 fw-semibold" onclick="focusAirport('GOI')">GOI (Goa)</button>
+        </div>
+      </div>
+
+      <!-- Scheduled Corridors List Section -->
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <label class="form-label small fw-bold text-light mb-0">
+          <i class="fas fa-plane-departure text-primary me-1"></i> Scheduled Air Corridors:
+        </label>
+        <small class="text-muted">Click to focus on radar</small>
+      </div>
+
+      <!-- Scrollable Corridor List (100% width, vertical column) -->
+      <div class="route-info-box flex-grow-1" id="routeListContainer">
+        {% for f in flights %}
+        <div class="route-item" data-airline="{{ f.Airline }}" onclick="highlightFlight('{{ f.Flight_No }}', '{{ f.Source }}', '{{ f.Destination }}')">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong class="text-white fs-6">
+              <i class="fas fa-plane text-info me-1"></i>{{ f.Flight_No }}
+            </strong>
+            <span class="badge 
+              {% if 'Air India' in f.Airline %}bg-danger
+              {% elif 'IndiGo' in f.Airline %}bg-primary
+              {% elif 'SpiceJet' in f.Airline %}bg-warning text-dark
+              {% elif 'Vistara' in f.Airline %}bg-purple text-white
+              {% else %}bg-secondary{% endif %} fw-semibold">
+              {{ f.Airline }}
+            </span>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-info fw-bold fs-6">
+              {{ f.Source }} <i class="fas fa-arrow-right text-light mx-1" style="font-size:0.75rem"></i> {{ f.Destination }}
+            </span>
+            <span class="badge border border-secondary text-light" style="background:#1e293b;">
+              {{ f.Date }}
+            </span>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center pt-2 border-top border-secondary border-opacity-25" style="font-size:0.8rem">
+            <span class="text-light">
+              <i class="fas fa-plane-alt text-secondary me-1"></i>{{ f.Aircraft_Model }}
+            </span>
+            <span class="badge bg-success-subtle text-success border border-success border-opacity-25 px-2 py-1 fw-semibold">
+              <i class="fas fa-chair me-1"></i>{{ f.Seats_Available }} Left
+            </span>
+            <a href="{{ url_for('book_flight', source=f.Source, destination=f.Destination, date=f.Date) }}" class="btn btn-sm btn-primary py-0 px-2 fw-semibold" onclick="event.stopPropagation()">
+              Book
+            </a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+  let map;
+  let airportMarkers = {};
+  let routePolylines = [];
+
+  const AIRPORT_COORDS = {{ airports | tojson }};
+  const FLIGHTS_DATA = {{ flights | tojson }};
+
+  const AIRLINE_COLORS = {
+    'Air India': '#ef4444',
+    'IndiGo': '#2563eb',
+    'SpiceJet': '#f97316',
+    'Vistara': '#7c3aed',
+    'Akasa Air': '#d97706',
+    'AIX Connect': '#0d9488'
+  };
+
+  function initMap() {
+    // Calculate total available seats
+    let totalAvail = 0;
+    FLIGHTS_DATA.forEach(f => { totalAvail += (f.Seats_Available || 0); });
+    const totalEl = document.getElementById('totalSeatsAvailCounter');
+    if (totalEl) totalEl.textContent = totalAvail.toLocaleString();
+
+    // Center of India: Lat 21.5, Lng 78.9629, Zoom 5
+    map = L.map('map-container', {
+      center: [21.5, 78.9629],
+      zoom: 5,
+      minZoom: 4,
+      maxZoom: 10
+    });
+
+    // Street View Map Tiles (Default & Primary Provider)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
+      maxZoom: 19
+    }).addTo(map);
+
+    renderAirports();
+    renderRoutes('ALL');
+  }
+
+  function renderAirports() {
+    for (const [code, info] of Object.entries(AIRPORT_COORDS)) {
+      const isHub = info.hub;
+      const html = `
+        <div style="display:flex; flex-direction:column; align-items:center;">
+          <div class="airport-dot ${isHub ? 'hub' : ''}" title="${info.city} (${code})"></div>
+          <div class="airport-label">${code}</div>
+        </div>
+      `;
+
+      const icon = L.divIcon({
+        className: 'airport-icon',
+        html: html,
+        iconSize: [40, 36],
+        iconAnchor: [20, 8]
+      });
+
+      const marker = L.marker([info.lat, info.lng], { icon: icon }).addTo(map);
+
+      // Compute departures and arrivals for popup
+      const depFlights = FLIGHTS_DATA.filter(f => f.Source === code);
+      const arrFlights = FLIGHTS_DATA.filter(f => f.Destination === code);
+
+      let popupContent = `
+        <div style="min-width: 230px;">
+          <div class="d-flex align-items-center justify-content-between mb-1">
+            <h6 class="fw-bold mb-0 text-white">${info.city} (${code})</h6>
+            ${isHub ? '<span class="badge bg-warning text-dark fw-bold">Primary Hub</span>' : ''}
+          </div>
+          <small class="text-light d-block mb-2" style="font-size:0.75rem">${info.name}</small>
+          <div class="p-2 mb-2 rounded" style="background:#1e293b; font-size:0.8rem; border: 1px solid #334155;">
+            <div><i class="fas fa-plane-departure text-primary me-1"></i> Departing Flights: <strong>${depFlights.length}</strong></div>
+            <div><i class="fas fa-plane-arrival text-success me-1"></i> Arriving Flights: <strong>${arrFlights.length}</strong></div>
+          </div>
+          <a href="/book-flight?source=${code}" class="btn btn-primary btn-sm w-100 py-1 fw-semibold" style="font-size:0.78rem">
+            <i class="fas fa-search me-1"></i> Book from ${code}
+          </a>
+        </div>
+      `;
+
+      marker.bindPopup(popupContent);
+      airportMarkers[code] = marker;
+    }
+  }
+
+  // Generates curved flight path coordinates (quadratic bezier curve)
+  function getCurvedCoordinates(start, end, curvature = 0.15) {
+    const lat1 = start[0], lng1 = start[1];
+    const lat2 = end[0], lng2 = end[1];
+    const midLat = (lat1 + lat2) / 2;
+    const midLng = (lng1 + lng2) / 2;
+
+    // Offset perpendicular to the chord
+    const dLat = lat2 - lat1;
+    const dLng = lng2 - lng1;
+    const ctrlLat = midLat - dLng * curvature;
+    const ctrlLng = midLng + dLat * curvature;
+
+    const points = [];
+    const steps = 30;
+    for (let t = 0; t <= 1; t += 1 / steps) {
+      const lat = (1 - t) * (1 - t) * lat1 + 2 * (1 - t) * t * ctrlLat + t * t * lat2;
+      const lng = (1 - t) * (1 - t) * lng1 + 2 * (1 - t) * t * ctrlLng + t * t * lng2;
+      points.push([lat, lng]);
+    }
+    return points;
+  }
+
+  function renderRoutes(airlineFilter = 'ALL') {
+    // Clear old polylines
+    routePolylines.forEach(p => map.removeLayer(p));
+    routePolylines = [];
+
+    const filtered = (airlineFilter === 'ALL')
+      ? FLIGHTS_DATA
+      : FLIGHTS_DATA.filter(f => f.Airline === airlineFilter);
+
+    filtered.forEach((f, idx) => {
+      const srcMeta = AIRPORT_COORDS[f.Source];
+      const dstMeta = AIRPORT_COORDS[f.Destination];
+      if (!srcMeta || !dstMeta) return;
+
+      const start = [srcMeta.lat, srcMeta.lng];
+      const end = [dstMeta.lat, dstMeta.lng];
+      
+      const curveFactor = 0.12 + (idx % 3) * 0.05;
+      const curvePoints = getCurvedCoordinates(start, end, curveFactor);
+
+      const color = AIRLINE_COLORS[f.Airline] || '#38bdf8';
+
+      const polyline = L.polyline(curvePoints, {
+        color: color,
+        weight: 3.5,
+        opacity: 0.85,
+        dashArray: '6, 6',
+        lineCap: 'round'
+      }).addTo(map);
+
+      // Popup on route click
+      const popupHtml = `
+        <div style="min-width: 230px;">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <strong class="text-white fs-6"><i class="fas fa-plane text-info me-1"></i>${f.Flight_No}</strong>
+            <span class="badge" style="background:${color}; color:#fff; font-weight:600">${f.Airline}</span>
+          </div>
+          <div class="text-info fw-bold mb-2 fs-6">${f.Source} &rarr; ${f.Destination}</div>
+          <div class="p-2 mb-2 rounded" style="background:#1e293b; font-size:0.8rem; border: 1px solid #334155;">
+            <div>Date: <strong class="text-white">${f.Date}</strong></div>
+            <div>Departure: <strong class="text-info">${f.Departure_Time.includes('T') ? f.Departure_Time.substring(11, 16) : f.Departure_Time.substring(0, 5)}</strong></div>
+            <div>Aircraft: <strong class="text-white">${f.Aircraft_Model}</strong></div>
+            <div>Seats Available: <strong class="text-success">${f.Seats_Available}</strong> / ${f.Total_Capacity}</div>
+          </div>
+          <a href="/book-flight?source=${f.Source}&destination=${f.Destination}&date=${f.Date}" class="btn btn-success btn-sm w-100 py-1 fw-semibold" style="font-size:0.78rem">
+            <i class="fas fa-ticket-alt me-1"></i> Book This Flight
+          </a>
+        </div>
+      `;
+
+      polyline.bindPopup(popupHtml);
+      polyline.flightData = f;
+      routePolylines.push(polyline);
+    });
+  }
+
+  function filterMapRoutes() {
+    const sel = document.getElementById('filterAirlineSelect').value;
+    renderRoutes(sel);
+
+    // Synchronize sidebar list items
+    const items = document.querySelectorAll('.route-item');
+    let visibleCount = 0;
+    items.forEach(item => {
+      const airline = item.getAttribute('data-airline');
+      if (sel === 'ALL' || airline === sel) {
+        item.style.display = 'block';
+        visibleCount++;
+      } else {
+        item.style.display = 'none';
+      }
+    });
+    const countBadge = document.getElementById('routeCountBadge');
+    if (countBadge) countBadge.textContent = visibleCount + ' Active';
+  }
+
+  function resetMapView() {
+    map.setView([21.5, 78.9629], 5);
+  }
+
+  function focusAirport(code) {
+    const info = AIRPORT_COORDS[code];
+    if (info && airportMarkers[code]) {
+      map.flyTo([info.lat, info.lng], 7, { duration: 1.2 });
+      airportMarkers[code].openPopup();
+    }
+  }
+
+  function highlightFlight(flightNo, srcCode, dstCode) {
+    const matched = routePolylines.find(p => p.flightData && p.flightData.Flight_No === flightNo);
+    if (matched) {
+      matched.openPopup();
+      map.fitBounds(matched.getBounds(), { padding: [60, 60], maxZoom: 7 });
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', initMap);
+</script>
+{% endblock %}

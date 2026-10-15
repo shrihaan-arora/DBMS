@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Flights — SkyReserve{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">Flights</li>{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <h4 class="fw-bold mb-0"><i class="fas fa-route me-2 text-primary"></i>Flight Routes</h4>
+  <div class="d-flex gap-2">
+    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#quickFlightModal">
+      <i class="fas fa-keyboard me-1"></i> Quick Manual Input
+    </button>
+    <a href="{{ url_for('flight_add') }}" class="btn btn-primary"><i class="fas fa-plus me-1"></i> Add Flight</a>
+  </div>
+</div>
+
+<div class="table-card mb-4">
+  <div class="card-header">
+    <form method="GET" class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label mb-1 small">Source</label>
+        <input type="text" name="source" class="form-control form-control-sm" value="{{ source }}" placeholder="e.g. DEL">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label mb-1 small">Destination</label>
+        <input type="text" name="destination" class="form-control form-control-sm" value="{{ destination }}" placeholder="e.g. BOM">
+      </div>
+      <div class="col-md-4">
+        <button class="btn btn-primary btn-sm me-1"><i class="fas fa-search me-1"></i>Search</button>
+        <a href="{{ url_for('flights') }}" class="btn btn-outline-secondary btn-sm">Clear</a>
+      </div>
+    </form>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead><tr><th>Flight No</th><th>Airline</th><th>Source</th><th>Destination</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for f in flights %}
+        <tr>
+          <td><strong>{{ f.Flight_No }}</strong></td>
+          <td>{{ f.Airline }}</td>
+          <td><span class="badge bg-light text-dark border">{{ f.Source }}</span></td>
+          <td><span class="badge bg-light text-dark border">{{ f.Destination }}</span></td>
+          <td>
+            <a href="{{ url_for('flight_edit', flight_no=f.Flight_No) }}" class="btn btn-sm btn-outline-primary me-1"><i class="fas fa-edit"></i></a>
+            <form method="POST" action="{{ url_for('flight_delete', flight_no=f.Flight_No) }}" class="d-inline" onsubmit="return confirmAction('Delete flight {{ f.Flight_No }}?')">
+              <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="text-center text-muted py-4">No flights found</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal: Quick Manual Flight Input -->
+<div class="modal fade" id="quickFlightModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title"><i class="fas fa-keyboard text-warning me-2"></i>Quick Manual Flight Input</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('flight_add') }}">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Flight Number <span class="text-danger">*</span></label>
+            <input type="text" name="flight_no" class="form-control" placeholder="e.g. AI-505, 6E-888" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Airline <span class="text-danger">*</span></label>
+            <input type="text" name="airline" class="form-control" placeholder="e.g. Air India" required>
+          </div>
+          <div class="row">
+            <div class="col-6 mb-3">
+              <label class="form-label fw-semibold">Source Airport <span class="text-danger">*</span></label>
+              <input type="text" name="source" class="form-control" placeholder="e.g. DEL" required>
+            </div>
+            <div class="col-6 mb-3">
+              <label class="form-label fw-semibold">Destination Airport <span class="text-danger">*</span></label>
+              <input type="text" name="destination" class="form-control" placeholder="e.g. BOM" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Save Flight</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

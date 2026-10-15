@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — SkyReserve{% endblock %}
+{% block content %}
+<!-- Top Header & Quick Actions -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h4 class="fw-bold mb-1"><i class="fas fa-tachometer-alt me-2 text-primary"></i>Operational Dashboard</h4>
+    <p class="text-muted small mb-0">Centralized airline operations, fleet dispatch, reservation management &amp; concurrency monitoring.</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{{ url_for('book_flight') }}" class="btn btn-primary fw-semibold shadow-sm">
+      <i class="fas fa-search me-1"></i> Book a Flight
+    </a>
+    <a href="{{ url_for('flight_map') }}" class="btn btn-outline-info fw-semibold">
+      <i class="fas fa-map-marked-alt me-1"></i> India Flight Map
+    </a>
+    <a href="{{ url_for('project_guide') }}" class="btn btn-outline-light fw-semibold">
+      <i class="fas fa-book-open me-1"></i> Project Docs
+    </a>
+    <a href="{{ url_for('manual_entry') }}" class="btn btn-warning fw-semibold shadow-sm">
+      <i class="fas fa-keyboard me-1"></i> Manual Hub
+    </a>
+  </div>
+</div>
+
+<!-- Interactive Search & Book Flight Hero Card (On Dashboard!) -->
+<div class="table-card p-4 mb-4" style="background: linear-gradient(135deg, #1e293b, #0f172a); border-left: 4px solid #38bdf8;">
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+      <h5 class="fw-bold mb-0 text-white"><i class="fas fa-plane-departure text-info me-2"></i>Find &amp; Book Flights (Real-Time Availability)</h5>
+      <small class="text-muted">Enter departure, destination and date to check live seats and reserve instantly.</small>
+    </div>
+    <span class="badge bg-success-subtle text-success border border-success border-opacity-25 px-2 py-1">
+      <i class="fas fa-bolt me-1"></i> FR3, FR7, FR8, FR10 Active
+    </span>
+  </div>
+
+  <form method="GET" action="{{ url_for('book_flight') }}">
+    <div class="row g-3 align-items-end">
+      <div class="col-lg-3 col-md-6">
+        <label class="form-label small fw-semibold text-muted"><i class="fas fa-plane-departure text-primary me-1"></i> From (Origin)</label>
+        <select class="form-select" name="source" required>
+          <option value="">Select Origin City</option>
+          <option value="DEL">Delhi (DEL) — Indira Gandhi Intl</option>
+          <option value="BOM">Mumbai (BOM) — Chhatrapati Shivaji Intl</option>
+          <option value="BLR">Bengaluru (BLR) — Kempegowda Intl</option>
+          <option value="MAA">Chennai (MAA) — Chennai Intl</option>
+          <option value="HYD">Hyderabad (HYD) — Rajiv Gandhi Intl</option>
+          <option value="CCU">Kolkata (CCU) — Netaji Subhash Bose Intl</option>
+          <option value="GOI">Goa (GOI) — Dabolim / Manohar Intl</option>
+          <option value="JAI">Jaipur (JAI) — Jaipur Intl</option>
+          <option value="PNQ">Pune (PNQ) — Pune Airport</option>
+          <option value="AMD">Ahmedabad (AMD) — Sardar Patel Intl</option>
+          <option value="COK">Kochi (COK) — Cochin Intl</option>
+          <option value="GAU">Guwahati (GAU) — Lokpriya Gopinath Intl</option>
+        </select>
+      </div>
+
+      <div class="col-lg-3 col-md-6">
+        <label class="form-label small fw-semibold text-muted"><i class="fas fa-plane-arrival text-success me-1"></i> To (Destination)</label>
+        <select class="form-select" name="destination" required>
+          <option value="">Select Destination City</option>
+          <option value="BOM">Mumbai (BOM) — Chhatrapati Shivaji Intl</option>
+          <option value="DEL">Delhi (DEL) — Indira Gandhi Intl</option>
+          <option value="BLR">Bengaluru (BLR) — Kempegowda Intl</option>
+          <option value="HYD">Hyderabad (HYD) — Rajiv Gandhi Intl</option>
+          <option value="MAA">Chennai (MAA) — Chennai Intl</option>
+          <option value="CCU">Kolkata (CCU) — Netaji Subhash Bose Intl</option>
+          <option value="GOI">Goa (GOI) — Dabolim / Manohar Intl</option>
+          <option value="JAI">Jaipur (JAI) — Jaipur Intl</option>
+          <option value="PNQ">Pune (PNQ) — Pune Airport</option>
+          <option value="AMD">Ahmedabad (AMD) — Sardar Patel Intl</option>
+          <option value="COK">Kochi (COK) — Cochin Intl</option>
+          <option value="GAU">Guwahati (GAU) — Lokpriya Gopinath Intl</option>
+        </select>
+      </div>
+
+      <div class="col-lg-3 col-md-6">
+        <label class="form-label small fw-semibold text-muted"><i class="fas fa-calendar-day text-warning me-1"></i> Travel Date</label>
+        <input type="date" class="form-control" name="date" value="2026-10-10">
+      </div>
+
+      <div class="col-lg-3 col-md-6">
+        <button type="submit" class="btn btn-primary w-100 fw-semibold py-2">
+          <i class="fas fa-search me-1"></i> Search &amp; Book
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <div class="d-flex align-items-center gap-2 mt-3 pt-2 border-top border-secondary border-opacity-25 flex-wrap">
+    <small class="text-muted">Direct Corridors:</small>
+    <a href="{{ url_for('book_flight', source='DEL', destination='BOM') }}" class="badge bg-dark text-info border border-secondary text-decoration-none py-1 px-2">DEL &rarr; BOM</a>
+    <a href="{{ url_for('book_flight', source='BOM', destination='BLR') }}" class="badge bg-dark text-info border border-secondary text-decoration-none py-1 px-2">BOM &rarr; BLR</a>
+    <a href="{{ url_for('book_flight', source='DEL', destination='BLR') }}" class="badge bg-dark text-info border border-secondary text-decoration-none py-1 px-2">DEL &rarr; BLR</a>
+    <a href="{{ url_for('book_flight', source='BLR', destination='HYD') }}" class="badge bg-dark text-info border border-secondary text-decoration-none py-1 px-2">BLR &rarr; HYD</a>
+    <a href="{{ url_for('book_flight', source='DEL', destination='MAA') }}" class="badge bg-dark text-info border border-secondary text-decoration-none py-1 px-2">DEL &rarr; MAA</a>
+    <a href="{{ url_for('book_flight', source='DEL', destination='CCU') }}" class="badge bg-dark text-info border border-secondary text-decoration-none py-1 px-2">DEL &rarr; CCU</a>
+    <a href="{{ url_for('book_flight', source='BLR', destination='GOI') }}" class="badge bg-dark text-info border border-secondary text-decoration-none py-1 px-2">BLR &rarr; GOI</a>
+  </div>
+</div>
+
+<!-- Stats Cards (8 Categories) -->
+<div class="row g-3 mb-4">
+  <div class="col-xl-3 col-md-6 col-6">
+    <div class="stat-card d-flex align-items-center gap-3">
+      <div class="icon" style="background:#1e40af;color:#60a5fa"><i class="fas fa-route"></i></div>
+      <div><h3>{{ stats.flights }}</h3><small>Flights</small></div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-md-6 col-6">
+    <div class="stat-card d-flex align-items-center gap-3">
+      <div class="icon" style="background:#15803d;color:#4ade80"><i class="fas fa-calendar-alt"></i></div>
+      <div><h3>{{ stats.schedules }}</h3><small>Schedules</small></div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-md-6 col-6">
+    <div class="stat-card d-flex align-items-center gap-3">
+      <div class="icon" style="background:#7e22ce;color:#c084fc"><i class="fas fa-users"></i></div>
+      <div><h3>{{ stats.passengers }}</h3><small>Passengers</small></div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-md-6 col-6">
+    <div class="stat-card d-flex align-items-center gap-3">
+      <div class="icon" style="background:#b45309;color:#fbbf24"><i class="fas fa-ticket-alt"></i></div>
+      <div><h3>{{ stats.bookings }}</h3><small>Active Bookings</small></div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-md-6 col-6">
+    <div class="stat-card d-flex align-items-center gap-3">
+      <div class="icon" style="background:#be185d;color:#f472b6"><i class="fas fa-plane"></i></div>
+      <div><h3>{{ stats.aircraft }}</h3><small>Aircraft</small></div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-md-6 col-6">
+    <div class="stat-card d-flex align-items-center gap-3">
+      <div class="icon" style="background:#0f766e;color:#2dd4bf"><i class="fas fa-user-tie"></i></div>
+      <div><h3>{{ stats.crew }}</h3><small>Crew Members</small></div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-md-6 col-6">
+    <div class="stat-card d-flex align-items-center gap-3">
+      <div class="icon" style="background:#6b21a8;color:#d8b4fe"><i class="fas fa-suitcase-rolling"></i></div>
+      <div><h3>{{ stats.baggage }}</h3><small>Baggage Items</small></div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-md-6 col-6">
+    <div class="stat-card d-flex align-items-center gap-3">
+      <div class="icon" style="background:#c2410c;color:#fb923c"><i class="fas fa-clipboard-list"></i></div>
+      <div><h3>{{ stats.assignments }}</h3><small>Crew Assignments</small></div>
+    </div>
+  </div>
+</div>
+
+<!-- Upcoming Flights & Recent Bookings Tables -->
+<div class="row g-4">
+  <!-- Upcoming Flights -->
+  <div class="col-lg-7">
+    <div class="table-card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-plane-departure me-2 text-primary"></i>Upcoming Scheduled Flights</span>
+        <div class="d-flex gap-2">
+          <a href="{{ url_for('flight_map') }}" class="btn btn-sm btn-outline-info"><i class="fas fa-map-marked-alt me-1"></i> Map</a>
+          <a href="{{ url_for('schedules') }}" class="btn btn-sm btn-outline-primary">View All</a>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead><tr><th>Flight</th><th>Route</th><th>Date</th><th>Departure</th><th>Gate</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for s in upcoming %}
+            <tr>
+              <td><strong class="text-white">{{ s.Flight_No }}</strong><br><small class="text-muted">{{ s.Aircraft_Model }}</small></td>
+              <td><span class="text-info">{{ s.Source }}</span> &rarr; <span class="text-success">{{ s.Destination }}</span></td>
+              <td>{{ s.Date }}</td>
+              <td>{{ s.Departure_Time[11:16] if s.Departure_Time|length > 11 else s.Departure_Time }}</td>
+              <td>{{ s.Gate or '—' }}</td>
+              <td>
+                {% set st = s.Status|lower|replace(' ','-') %}
+                <span class="badge badge-{{ st }} rounded-pill px-3">{{ s.Status }}</span>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-center text-muted py-4">No upcoming flights</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Bookings -->
+  <div class="col-lg-5">
+    <div class="table-card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-receipt me-2 text-warning"></i>Recent Passenger Reservations</span>
+        <a href="{{ url_for('bookings') }}" class="btn btn-sm btn-outline-primary">View All</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead><tr><th>Passenger</th><th>Flight</th><th>Date</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for b in recent_bookings %}
+            <tr>
+              <td class="text-white fw-semibold">{{ b.Passenger }}</td>
+              <td><strong>{{ b.Flight_No }}</strong><br><small class="text-muted">{{ b.Source }}&rarr;{{ b.Destination }}</small></td>
+              <td>{{ b.Date }}</td>
+              <td>
+                {% set st = b.Booking_Status|lower|replace(' ','-') %}
+                <span class="badge badge-{{ st }} rounded-pill px-3">{{ b.Booking_Status }}</span>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="text-center text-muted py-4">No bookings yet</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

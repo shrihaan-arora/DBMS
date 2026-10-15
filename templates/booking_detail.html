@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}Booking #{{ booking.Booking_ID }} — SkyReserve{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('bookings') }}" class="text-decoration-none">Bookings</a></li>
+<li class="breadcrumb-item active">#{{ booking.Booking_ID }}</li>
+{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="fw-bold mb-0">
+    <i class="fas fa-ticket-alt me-2 text-primary"></i>Booking #{{ booking.Booking_ID }}
+    {% set st = booking.Booking_Status|lower|replace(' ','-') %}
+    <span class="badge badge-{{ st }} rounded-pill ms-2 fs-6">{{ booking.Booking_Status }}</span>
+  </h4>
+  <div class="d-flex gap-2">
+    {% if booking.Booking_Status != 'Cancelled' %}
+    <a href="{{ url_for('booking_edit', bid=booking.Booking_ID) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit me-1"></i> Edit Seat/Class</a>
+    <form method="POST" action="{{ url_for('booking_cancel', bid=booking.Booking_ID) }}" onsubmit="return confirmAction('Are you sure you want to cancel this reservation?')">
+      <button class="btn btn-sm btn-outline-danger"><i class="fas fa-ban me-1"></i> Cancel Booking</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <!-- Passenger & Flight Summary -->
+  <div class="col-lg-6">
+    <div class="table-card h-100">
+      <div class="card-header"><i class="fas fa-user me-2"></i>Passenger &amp; Schedule Details</div>
+      <div class="p-3">
+        <div class="mb-3 pb-2 border-bottom">
+          <small class="text-muted d-block">Passenger</small>
+          <a href="{{ url_for('passenger_detail', pid=booking.PID) }}" class="fw-bold text-decoration-none fs-6">{{ booking.Passenger }}</a>
+        </div>
+        <div class="row mb-3 pb-2 border-bottom">
+          <div class="col-6">
+            <small class="text-muted d-block">Flight Number</small>
+            <span class="fw-semibold">{{ booking.Flight_No }}</span>
+          </div>
+          <div class="col-6">
+            <small class="text-muted d-block">Aircraft Model</small>
+            <span>{{ booking.Aircraft_Model }}</span>
+          </div>
+        </div>
+        <div class="row mb-3 pb-2 border-bottom">
+          <div class="col-6">
+            <small class="text-muted d-block">Route</small>
+            <span class="badge bg-light text-dark border">{{ booking.Source }} → {{ booking.Destination }}</span>
+          </div>
+          <div class="col-6">
+            <small class="text-muted d-block">Date</small>
+            <span class="fw-semibold">{{ booking.Date }}</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-6">
+            <small class="text-muted d-block">Departure</small>
+            <span>{{ booking.Departure_Time[11:16] if booking.Departure_Time|length > 11 else booking.Departure_Time }}</span>
+          </div>
+          <div class="col-6">
+            <small class="text-muted d-block">Arrival</small>
+            <span>{{ booking.Arrival_Time[11:16] if booking.Arrival_Time|length > 11 else booking.Arrival_Time }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reservation & Financial Summary -->
+  <div class="col-lg-6">
+    <div class="table-card h-100">
+      <div class="card-header"><i class="fas fa-receipt me-2"></i>Reservation &amp; Fare Information</div>
+      <div class="p-3">
+        <div class="row mb-3 pb-2 border-bottom">
+          <div class="col-6">
+            <small class="text-muted d-block">Seat Number</small>
+            <span class="fs-5 fw-bold text-primary">{{ booking.Seat_No or 'Unassigned' }}</span>
+          </div>
+          <div class="col-6">
+            <small class="text-muted d-block">Class</small>
+            <span class="badge badge-{{ booking.Class|lower }} rounded-pill px-3 py-1">{{ booking.Class }}</span>
+          </div>
+        </div>
+        <div class="row mb-3 pb-2 border-bottom">
+          <div class="col-6">
+            <small class="text-muted d-block">Fare Amount</small>
+            <span class="fs-5 fw-bold">₹{{ "%.2f"|format(booking.Fare) }}</span>
+          </div>
+          <div class="col-6">
+            <small class="text-muted d-block">Booking Timestamp</small>
+            <small class="text-muted">{{ booking.Booking_Date }}</small>
+          </div>
+        </div>
+        {% if booking.Cancellation_Date %}
+        <div class="row mb-2">
+          <div class="col-6">
+            <small class="text-muted d-block">Cancelled On</small>
+            <small class="text-danger fw-semibold">{{ booking.Cancellation_Date }}</small>
+          </div>
+          <div class="col-6">
+            <small class="text-muted d-block">Refund Status</small>
+            {% set rf = booking.Refund_Status|lower if booking.Refund_Status else 'none' %}
+            <span class="badge badge-{{ rf }} rounded-pill px-2">{{ booking.Refund_Status or 'N/A' }}</span>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Baggage Management (Weak Entity) -->
+<div class="table-card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="fas fa-suitcase-rolling me-2 text-primary"></i>Baggage Records (Weak Entity dependent on Booking)</span>
+    {% if booking.Booking_Status != 'Cancelled' %}
+    <a href="{{ url_for('baggage_add', bid=booking.Booking_ID) }}" class="btn btn-sm btn-primary">
+      <i class="fas fa-plus me-1"></i> Add Baggage
+    </a>
+    {% endif %}
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>Seq No</th>
+          <th>Tag Number</th>
+          <th>Type</th>
+          <th>Weight (kg)</th>
+          <th>Weight Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for bg in baggage %}
+        <tr>
+          <td>#{{ bg.Baggage_Seq_No }}</td>
+          <td><code>{{ bg.Tag_No }}</code></td>
+          <td><span class="badge bg-secondary-subtle text-secondary border">{{ bg.Type }}</span></td>
+          <td><strong>{{ bg.Weight }} kg</strong></td>
+          <td>
+            {% if bg.Weight > 23 %}
+              <span class="badge bg-danger-subtle text-danger border"><i class="fas fa-exclamation-triangle me-1"></i>Excess Weight (&gt;23kg)</span>
+            {% else %}
+              <span class="badge bg-success-subtle text-success border"><i class="fas fa-check me-1"></i>Within Standard</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if booking.Booking_Status != 'Cancelled' %}
+            <form method="POST" action="{{ url_for('baggage_delete', bid=booking.Booking_ID, seq=bg.Baggage_Seq_No) }}" class="d-inline" onsubmit="return confirmAction('Remove baggage tag {{ bg.Tag_No }}?')">
+              <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="text-center text-muted py-3">No baggage checked for this reservation</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Audit Trail -->
+<div class="table-card">
+  <div class="card-header"><i class="fas fa-history me-2"></i>Booking Audit Log</div>
+  <div class="table-responsive">
+    <table class="table table-sm table-hover">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Action</th>
+          <th>Changed By</th>
+          <th>Old Values</th>
+          <th>New Values</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in audit %}
+        <tr>
+          <td><small class="text-muted">{{ a.Changed_At }}</small></td>
+          <td>
+            <span class="badge {% if a.Action=='CREATED' %}bg-success{% elif a.Action=='CANCELLED' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+              {{ a.Action }}
+            </span>
+          </td>
+          <td><small>{{ a.Changed_By }}</small></td>
+          <td><code class="small">{{ a.Old_Values or '—' }}</code></td>
+          <td><code class="small">{{ a.New_Values or '—' }}</code></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="text-center text-muted py-3">No audit history recorded yet</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
