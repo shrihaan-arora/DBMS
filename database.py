@@ -177,11 +177,57 @@ class MySQLConnectionWrapper:
         self.close()
 
 
-def get_db() -> MySQLConnectionWrapper:
+import sqlite3
+
+CURRENT_BACKEND = "mysql"
+
+
+class SQLiteConnectionWrapper:
+    """Fallback connection wrapper using local SQLite airline.db if MySQL is offline/unauthenticated."""
+    def __init__(self, raw_conn: sqlite3.Connection):
+        self._conn = raw_conn
+        self.is_sqlite = True
+
+    def cursor(self, dictionary: bool = True):
+        return self
+
+    def execute(self, query: str, params: tuple | list | dict | None = None):
+        # Convert %s to ? for SQLite parameter binding
+        query = query.replace("%s", "?")
+        if params is not None:
+            return self._conn.execute(query, params)
+        return self._conn.execute(query)
+
+    def commit(self):
+        self._conn.commit()
+
+    def rollback(self):
+        self._conn.rollback()
+
+    def close(self):
+        try:
+            self._conn.close()
+        except Exception:
+            pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type:
+            self.rollback()
+        else:
+            self.commit()
+        self.close()
+
+
+def get_db():
     """
-    Get a MySQL database connection configured with dictionary cursors.
-    Raises MySQLError with helpful diagnostics if connection fails.
+    Get a database connection. Attempts MySQL connection first using credentials
+    from .env. If MySQL is unconfigured or unreachable, automatically falls back
+    to the local SQLite airline.db instance so the website runs reliably.
     """
+    global CURRENT_BACKEND
     try:
         raw_conn = mysql.connector.connect(
             host=DB_HOST,
@@ -193,8 +239,16 @@ def get_db() -> MySQLConnectionWrapper:
             charset="utf8mb4",
             collation="utf8mb4_unicode_ci",
         )
+        CURRENT_BACKEND = "mysql"
         return MySQLConnectionWrapper(raw_conn)
-    except mysql.connector.Error as err:
+    except Exception as err:
+        sqlite_path = os.path.join(BASE_DIR, "airline.db")
+        if os.path.exists(sqlite_path):
+            raw_sqlite = sqlite3.connect(sqlite_path)
+            raw_sqlite.row_factory = sqlite3.Row
+            raw_sqlite.execute("PRAGMA foreign_keys = ON")
+            CURRENT_BACKEND = "sqlite"
+            return SQLiteConnectionWrapper(raw_sqlite)
         raise MySQLError(
             f"Failed to connect to MySQL database '{DB_NAME}' at {DB_HOST}:{DB_PORT} as '{DB_USER}'. "
             f"Details: {err}. Please verify your .env file and ensure MySQL Server is running."
